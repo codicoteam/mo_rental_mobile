@@ -1,0 +1,1683 @@
+lib/
+│
+├── main.dart
+│
+├── app/
+│   ├── data/
+│   │   ├── models/
+│   │   │   ├── bus_model.dart
+│   │   │   ├── route_model.dart
+│   │   │   ├── ticket_model.dart
+│   │   │   ├── user_model.dart
+│   │   │   └── payment_model.dart
+│   │   │
+│   │   ├── services/
+│   │   │   ├── api_service.dart
+│   │   │   ├── auth_service.dart
+│   │   │   ├── database_service.dart
+│   │   │   ├── payment_service.dart
+│   │   │   └── storage_service.dart
+│   │   │
+│   │   ├── repositories/
+│   │   │   ├── user_repository.dart
+│   │   │   ├── bus_repository.dart
+│   │   │   └── ticket_repository.dart
+│   │   │
+│   │   └── providers/
+│   │       └── api_provider.dart
+│   │
+│   ├── modules/
+│   │   ├── auth/
+│   │   │   ├── bindings/auth_binding.dart
+│   │   │   ├── controllers/auth_controller.dart
+│   │   │   ├── views/login_view.dart
+│   │   │   ├── views/signup_view.dart
+│   │   │   └── views/forgot_password_view.dart
+│   │   │
+│   │   ├── home/
+│   │   │   ├── bindings/home_binding.dart
+│   │   │   ├── controllers/home_controller.dart
+│   │   │   ├── views/home_view.dart
+│   │   │   ├── views/bus_list_view.dart
+│   │   │   └── views/search_route_view.dart
+│   │   │
+│   │   ├── booking/
+│   │   │   ├── bindings/booking_binding.dart
+│   │   │   ├── controllers/booking_controller.dart
+│   │   │   ├── views/booking_view.dart
+│   │   │   └── views/seat_selection_view.dart
+│   │   │
+│   │   ├── ticket/
+│   │   │   ├── bindings/ticket_binding.dart
+│   │   │   ├── controllers/ticket_controller.dart
+│   │   │   ├── views/ticket_list_view.dart
+│   │   │   └── views/ticket_detail_view.dart
+│   │   │
+│   │   ├── profile/
+│   │   │   ├── bindings/profile_binding.dart
+│   │   │   ├── controllers/profile_controller.dart
+│   │   │   ├── views/profile_view.dart
+│   │   │   └── views/edit_profile_view.dart
+│   │   │
+│   │   └── payment/
+│   │       ├── bindings/payment_binding.dart
+│   │       ├── controllers/payment_controller.dart
+│   │       ├── views/payment_view.dart
+│   │       └── views/receipt_view.dart
+│   │
+│   ├── routes/
+│   │   ├── app_pages.dart
+│   │   └── app_routes.dart
+│   │
+│   ├── bindings/
+│   │   └── initial_binding.dart
+│   │
+│   ├── utils/
+│   │   ├── constants.dart
+│   │   ├── helpers.dart
+│   │   ├── theme.dart
+│   │   ├── validators.dart
+│   │   └── formatters.dart
+│   │
+│   ├── widgets/
+│   │   ├── custom_button.dart
+│   │   ├── custom_input_field.dart
+│   │   ├── ticket_card.dart
+│   │   ├── bus_card.dart
+│   │   └── empty_state.dart
+│   │
+│   └── localization/
+│       ├── en_US.json
+│       ├── fr_FR.json
+│       └── zu_ZA.json   # for local language support (optional)
+│
+└── core/
+    ├── bindings/
+    │   └── global_binding.dart
+    ├── theme/
+    │   ├── app_colors.dart
+    │   ├── app_text_styles.dart
+    │   └── app_theme.dart
+    ├── config/
+    │   ├── app_config.dart
+    │   └── env.dart
+    └── utils/
+        ├── logger.dart
+        ├── date_utils.dart
+        └── extensions.dart
+
+
+| Layer             | Description                                                                      |
+| ----------------- | -------------------------------------------------------------------------------- |
+| **models/**       | Dart data models for Bus, Ticket, User, etc.                                     |
+| **controllers/**  | Logic for each screen; holds observable (`Rx`) state variables.                  |
+| **views/**        | Flutter UI screens; listens to controller state using `Obx()` or `GetBuilder()`. |
+| **bindings/**     | Tells GetX which controller(s) to initialize when navigating to a route.         |
+| **services/**     | Handles external resources: APIs, databases, Firebase, or payments.              |
+| **repositories/** | Abstract data layer connecting services and controllers (optional but clean).    |
+| **routes/**       | Central route management (names + GetPages list).                                |
+| **utils/**        | Constants, validators, formatters, helpers.                                      |
+| **widgets/**      | Reusable UI components.                                                          |
+
+https://busticketing-tq3o.onrender.com/api-docs/#/Auth/post_api_auth_register
+
+
+| Action     | What it does | Real-life meaning | Example in bus app      |
+| ---------- | ------------ | ----------------- | ----------------------- |
+| **GET**    | Fetch data   | “Show me”         | Get all available buses |
+| **POST**   | Add data     | “Create this”     | Register a new user     |
+| **PUT**    | Update data  | “Change this”     | Edit user profile       |
+| **DELETE** | Remove data  | “Delete this”     | Cancel ticket           |
+
+
+
+
+
+
+
+
+Absolutely! Let me explain this in simple terms using a Restaurant Analogy:
+🍕 Restaurant Analogy
+
+Think of your app like a restaurant:
+
+    Screen (UI) = Dining Area & Menu (what customers see)
+
+    Controller = Waiter (takes orders, communicates between kitchen and customers)
+
+    Service = Kitchen (does the actual cooking/work)
+
+    Model = Recipe (defines what ingredients and structure the food should have)
+
+    Bindings = Restaurant Manager (makes sure everyone is connected properly)
+
+🎯 What Each Part Does:
+// Like a recipe card that defines what a "Pizza" should contain
+class Pizza {
+  String name;
+  String size;
+  List<String> toppings;
+  
+  // This is like the recipe instructions
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'size': size,
+      'toppings': toppings,
+    };
+  }
+}
+
+What it does: Defines the structure of your data (like a blueprint)
+2. SERVICE - The Kitchen
+dart
+
+// Like the kitchen that actually cooks the pizza
+class PizzaService {
+  Future<Pizza> orderPizza(Pizza order) async {
+    // Send order to backend (like sending to kitchen)
+    // Wait for pizza to be cooked
+    // Return the finished pizza
+  }
+}
+
+What it does: Does the actual work (API calls, database operations)
+3. CONTROLLER - The Waiter
+dart
+
+// Like a waiter that takes your order and brings your food
+class PizzaController extends GetxController {
+  final PizzaService _pizzaService = Get.find();
+  
+  void orderPizza() {
+    // Take order from customer (screen)
+    // Send to kitchen (service)
+    // Bring food back to customer (update screen)
+  }
+}
+
+What it does: Manages communication between Screen and Service
+4. BINDINGS - The Restaurant Manager
+dart
+
+// Like a manager who makes sure waiter and kitchen are connected
+class PizzaBindings extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(() => PizzaService()); // Hire kitchen staff
+    Get.lazyPut(() => PizzaController()); // Hire waiter
+  }
+}
+
+What it does: Connects everything together automatically
+5. SCREEN - The Dining Area
+dart
+
+// What the customer actually sees and interacts with
+class PizzaScreen extends StatelessWidget {
+  final PizzaController controller = Get.find();
+  
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text('Welcome to Pizza App!'),
+        ElevatedButton(
+          onPressed: () => controller.orderPizza(), // Talk to waiter
+          child: Text('Order Pizza'),
+        ),
+      ],
+    );
+  }
+}
+
+What it does: The user interface that users interact with
+🔄 How They Work Together:
+Scenario: User Signs Up
+
+    SCREEN (SignUpScreen): User fills form and clicks "Sign Up" button
+
+    CONTROLLER (AuthController): "Hey Service, here's the user data, please sign them up!"
+
+    SERVICE (AuthService): "Okay, let me send this to the backend API..."
+
+    MODEL (SignUpRequest): Defines what data should be sent (name, email, password)
+
+    SERVICE: Gets response from API, processes it
+
+    CONTROLLER: "Screen, the signup was successful! Show success message"
+
+    SCREEN: Shows "Account created successfully!" message
+
+🏗️ Real Code Example - Sign Up Flow:
+Model (Data Structure)
+dart
+
+class SignUpData {
+  String firstName;
+  String email;
+  String password;
+  // ... defines what user data looks like
+}
+
+Service (Worker)
+dart
+
+class AuthService {
+  Future<bool> signUp(SignUpData data) async {
+    // Actually call the API
+    // Return true if successful, false if failed
+  }
+}
+
+Controller (Manager)
+dart
+
+class AuthController extends GetxController {
+  final AuthService authService = Get.find();
+  var isLoading = false.obs;
+  
+  Future<void> signUp(String name, String email, String password) async {
+    isLoading.value = true;
+    bool success = await authService.signUp(SignUpData(name, email, password));
+    isLoading.value = false;
+    
+    if (success) {
+      Get.snackbar('Success', 'Account created!');
+    } else {
+      Get.snackbar('Error', 'Sign up failed');
+    }
+  }
+}
+
+Screen (UI)
+dart
+
+class SignUpScreen extends StatelessWidget {
+  final AuthController controller = Get.find();
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: [
+          TextField(/* Name field */),
+          TextField(/* Email field */),
+          TextField(/* Password field */),
+          Obx(() => 
+            controller.isLoading.value 
+              ? CircularProgressIndicator()
+              : ElevatedButton(
+                  onPressed: () => controller.signUp(name, email, password),
+                  child: Text('Sign Up'),
+                )
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+Bindings (Connector)
+dart
+
+class AppBindings extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(() => AuthService()); // Create service
+    Get.lazyPut(() => AuthController()); // Create controller
+  }
+}
+
+🎯 Simple Summary:
+
+    MODEL = What the data looks like (like a form template)
+
+    SERVICE = Does the actual work (like a worker)
+
+    CONTROLLER = Manages everything (like a boss)
+
+    SCREEN = What users see and click (like a storefront)
+
+    BINDINGS = Connects everything automatically (like magic glue)
+
+🚀 Why This Structure?:
+
+    Clean Code: Each part has one job
+
+    Easy to Change: Change API without touching UI
+
+    Easy to Test: Test services without screens
+
+    Team Work: Different people can work on different parts
+
+    Scalable: Easy to add new features
+
+Think of it like building with LEGO blocks - each piece has its purpose, and they snap together to make something awesome! 🧱✨
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+HTTP Status Codes Explained
+
+HTTP status codes are 3-digit numbers that tell you if a request was successful or not. They're like response codes from a server.
+Common Status Code Categories:
+
+    2xx = SUCCESS ✅
+
+    4xx = CLIENT ERROR ❌ (Your mistake)
+
+    5xx = SERVER ERROR ❌ (Server's mistake)
+
+Most Important Status Codes:
+dart
+
+// ✅ SUCCESS CODES (2xx)
+200 - OK (Everything worked)
+201 - Created (New resource was created - LIKE YOUR BOOKING!)
+202 - Accepted (Request received, still processing)
+204 - No Content (Success but no data returned)
+
+// ❌ CLIENT ERROR CODES (4xx)  
+400 - Bad Request (You sent invalid data)
+401 - Unauthorized (Not logged in)
+403 - Forbidden (Logged in but no permission)
+404 - Not Found (Resource doesn't exist)
+
+// ❌ SERVER ERROR CODES (5xx)
+500 - Internal Server Error (Server crashed)
+502 - Bad Gateway 
+503 - Service Unavailable
+
+Your Specific Case:
+
+Your API returns:
+dart
+
+Status Code: 201  // ✅ SUCCESS - Booking was created!
+Response Body: { booking data... }
+
+What I Meant by "Manually set to true for 201 responses":
+
+In your original code, you were checking for a success field in the JSON:
+dart
+
+// OLD CODE (WRONG)
+if (responseData['success'] == true) {  // ❌ This field doesn't exist!
+  // success logic
+}
+
+But your API doesn't return a success field. Instead, it uses HTTP status codes to indicate success.
+Fixed Code Explained:
+dart
+
+Future<BookingResponse> createBooking(BookingRequest bookingData) async {
+  try {
+    final response = await http.post(/*...*/);
+
+    print('Booking Response: ${response.statusCode} - ${response.body}');
+
+    if (response.statusCode == 201) {  // ✅ Check the STATUS CODE, not JSON field
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      
+      return BookingResponse(
+        success: true, // 🎯 MANUALLY SET because 201 status = success
+        message: 'Booking created successfully',
+        booking: BookingData.fromJson(responseData),
+      );
+    } else {
+      // Handle error status codes (400, 401, 500, etc.)
+      return BookingResponse(
+        success: false, // 🎯 MANUALLY SET because non-201 status = failure
+        message: 'Booking failed',
+      );
+    }
+  } catch (e) {
+    // Handle network errors
+    return BookingResponse.error('Network error');
+  }
+}
+
+Real-World Analogy: 🍕
+
+Think of ordering pizza:
+
+    201 Created = "Pizza delivered successfully!" ✅
+
+    400 Bad Request = "You ordered pineapple pizza? That's invalid!" ❌
+
+    401 Unauthorized = "You didn't pay first!" ❌
+
+    500 Internal Error = "Our oven broke!" ❌
+
+Your API Flow:
+text
+
+Your App: "Create booking with this data" 📦
+    ↓
+API: "Got it! Status 201 - Booking Created!" ✅
+    ↓  
+API returns: { booking details... } 📄
+    ↓
+Your App: "201 status = SUCCESS! Show ticket" 🎫
+
+Summary:
+
+    Status Code 201 = "I successfully created your booking"
+
+    No success field in JSON = Your API doesn't need it because the status code says everything
+
+    "Manually set to true" = We're telling our app "201 status means success, even though there's no success field"
+
+So when you see 201 in the logs, CELEBRATE - your booking worked perfectly! 🎉
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+I'M GOING TO BE USING "Swagger App" FOR MY BACKEND.
+
+ENDPOINT DETAILS:
+
+    Method: GET
+
+    URL: https://busticketing-tq3o.onrender.com/api/users/profile
+
+    Purpose: Get logged-in user's profile
+
+    Swagger Link: https://busticketing-tq3o.onrender.com/api-docs/#/Users/get_api_users_profile
+
+RESPONSE:
+
+    Success Code: 200
+
+    Response Body:
+
+json
+
+{
+  "success": true,
+  "message": "User profile fetched successfully",
+  "user": {
+    "_id": "123",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "phone": "+1234567890"
+  }
+}
+
+MY CURRENT SCREEN:
+ProfileScreen that shows user information (currently using mock data).
+
+WHAT I NEED:
+Connect this screen to the backend API using GetX to show real user data.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Here’s how I’d explain the **expected frontend functionality** for each role, based strictly on the APIs and models you’ve built so far.
+
+I’ll focus on **Customer** and **Agent**, but I’ll briefly mention where Manager/Admin would step in so your frontend dev has context.
+
+---
+
+## 1. Customer – what the frontend should support
+
+### 1.1 Auth & Account
+
+* **Sign up / Login**
+
+  * Email + password auth (User model).
+  * Later can support Google/Apple (auth_providers).
+* **See own profile & roles**
+
+  * Show their **full_name**, **email**, roles (usually `["customer"]`).
+  * Show `status` (active/suspended) and handle access if suspended.
+* **Profile management (customer profile)**
+
+  * Create/update **customer profile** under `/api/v1/profiles`:
+
+    * full name, DOB, national ID
+    * **driver_license** (number, class, expiry, image URL)
+    * **address** (line1, city, region, country)
+    * **preferences** (currency, locale)
+    * **gdpr.marketing_opt_in`
+  * Show “verified / not verified” (customer profile).
+
+---
+
+### 1.2 Browse Branches & Vehicles
+
+* **Branches**
+
+  * List branches `/api/v1/branches` (name, code, address, opening hours, geo).
+  * Detail page: show address, phone, email, opening hours.
+  * Optional future: filter branches near user using `geo`.
+
+* **Vehicle models (catalog)**
+
+  * List vehicle models `/api/v1/vehicle-models`:
+
+    * make, model, year, class, transmission, fuel_type, seats, doors, features, images.
+  * Filter on:
+
+    * class (economy/compact/suv…)
+    * transmission (auto/manual)
+    * seats
+  * Detail view per model.
+
+* **Vehicle units (actual cars)**
+
+  * For more detailed UI, list `/api/v1/vehicles`:
+
+    * plate_number, color, status, availability_state, photos.
+  * Typically customers see models + “or similar”, but you already have unit-level API so frontend can show which specific car is assigned after confirmation.
+
+---
+
+### 1.3 Reservations (Car Bookings)
+
+* **Create a reservation**
+
+  * Form should capture:
+
+    * pickup branch + datetime
+    * dropoff branch + datetime
+    * chosen vehicle_model_id (or later a specific vehicle_id)
+    * optional notes
+    * driver info / snapshot (if different from account holder)
+  * Frontend calls `POST /api/v1/reservations` to create a reservation with:
+
+    * `user_id` (logged in customer)
+    * `vehicle_model_id`
+    * `pickup` & `dropoff` endpoints
+    * `pricing` snapshot (frontend or backend pricing service will compute using RatePlans).
+  * If you later expose `ReservationSchema.statics.isVehicleAvailable`, frontend may call a “check availability” endpoint before creating.
+
+* **View my reservations**
+
+  * `GET /api/v1/reservations?user_id=me` (depending on how you built the controller).
+  * Show:
+
+    * code, vehicle info, pickup/dropoff, status (pending / confirmed / checked_out / returned / cancelled / no_show), pricing, payment_summary.
+  * Detail page per reservation.
+
+* **Cancel a reservation**
+
+  * UI action to cancel if status allows.
+  * Call `PATCH /api/v1/reservations/:id` with `status: "cancelled"` (your controller will enforce rules).
+
+---
+
+### 1.4 Promo Codes & Pricing
+
+* **Apply promo code at checkout**
+
+  * Field for the user to enter promo code.
+  * Frontend calls something like `GET /api/v1/promo-codes/:code` or `POST /api/v1/promo-codes/validate` (depending on how you coded it).
+  * Show:
+
+    * discount, currency, any constraints (min_days, vehicle_class, branches).
+  * On success, include promo_code info in the **pricing breakdown** and in Payment (promo_code_id, promo_code).
+
+---
+
+### 1.5 Payments (for reservations)
+
+Even if you haven’t implemented full payment controllers yet, the **frontend expectations**:
+
+* **Start payment**
+
+  * From reservation detail, user clicks “Pay now”.
+  * UI calls payment API (e.g. `POST /api/v1/payments`) with:
+
+    * reservation_id
+    * provider (paynow/ecocash/etc.)
+    * method (card/wallet/bank/cash)
+    * amount, currency
+  * Backend returns payment info (pollUrl, status, provider_ref).
+
+* **Payment status**
+
+  * Show paymentStatus: `paid`, `pending`, `failed`, `unpaid`, `cancelled`, etc.
+  * Use either:
+
+    * Webhook on backend to update, frontend just reloads.
+    * Or polling on frontend using `GET /api/v1/payments/:id`.
+
+---
+
+### 1.6 Driver Profiles & Driver Bookings (Hire a driver only)
+
+This is **separate** from car rental reservations.
+
+* **See list of drivers**
+
+  * `GET /api/v1/driver-profiles` with filters:
+
+    * status=`approved`
+    * is_available=true
+    * base_city / base_region.
+  * Card for each driver:
+
+    * display_name, base_city, hourly_rate, years_experience, languages,
+    * rating_average & rating_count,
+    * identity & license status (e.g. “Verified licence”).
+
+* **Driver details page**
+
+  * Fetch by `GET /api/v1/driver-profiles/:id`.
+
+* **Create driver booking**
+
+  * Flow:
+
+    1. User chooses driver.
+    2. Fills trip details:
+
+       * start_at, optional end_at or hours_requested
+       * pickup_location, dropoff_location
+       * notes
+       * pricing (currency + hours_requested; backend calc hourly_rate_snapshot and estimated_total).
+    3. Frontend calls `POST /api/v1/driver-bookings`.
+  * initial status: `requested`.
+
+* **Track booking status**
+
+  * Show status transitions:
+
+    * `requested` → `accepted_by_driver` / `declined_by_driver`
+      → `awaiting_payment` → `confirmed` → `completed` or `cancelled_*` or `expired`.
+  * Poll via `GET /api/v1/driver-bookings/:id` or listen to websocket events if you add them.
+
+* **Attach payment for driver booking**
+
+  * After driver accepts:
+
+    * UI calls payment API with `reservation_id` replaced by `driver_booking_id` (you may extend Payment model for this).
+  * Display payment status like for reservations.
+
+* **Rate the driver**
+
+  * After completion, a “Rate your driver” UI:
+
+    * `PATCH /api/v1/driver-bookings/:id` with `customer_rating_of_driver` and `customer_review_text`.
+
+---
+
+### 1.7 Chat (Customer Support & Operations)
+
+* **Conversation list**
+
+  * `GET /api/v1/chats/conversations?forUser=me`
+  * Show last_message_preview, last_message_at, type (direct/group), context (support/reservation/driver_booking).
+
+* **Open a conversation**
+
+  * For example:
+
+    * “Chat with support/agent about reservation X”
+    * Frontend calls `POST /api/v1/chats/conversations` with participants and optional `context_type` + `context_id`.
+
+* **Real-time messaging**
+
+  * Connect with Socket.IO:
+
+    * `io("ws://.../", { auth: { token: "Bearer <JWT>" } })`
+  * Join a conversation:
+
+    * emit `"chat:join_conversation"` → listen `"chat:conversation_joined"`.
+  * Send message:
+
+    * emit `"chat:send_message"` with `conversation_id`, `content`, optional attachments.
+    * listen `"chat:message_created"` for new messages.
+  * Typing indicators:
+
+    * emit `"typing:start"` / `"typing:stop"`, listen `"typing:started"`, `"typing:stopped"`.
+  * Read receipts:
+
+    * emit `"chat:mark_read"` for a message.
+    * listen `"chat:message_read"`.
+
+---
+
+### 1.8 Vehicle Tracking (What customer can see)
+
+If you allow customers to view the location of **their** vehicle during an active reservation:
+
+* **Last known location**
+
+  * Call `GET /api/v1/vehicle-trackers/vehicle/:vehicleId/location`:
+
+    * Show vehicle’s last coordinates on a map, last_seen_at, etc.
+
+* **Live updates via socket**
+
+  * Connect to tracking namespace:
+    `io("/tracking", { auth: { authToken: "Bearer <JWT>" } })`
+  * Subscribe:
+
+    * emit `"vehicle:subscribe"` `{ vehicleId }`.
+  * Listen for:
+
+    * `"vehicle:location_update"` → update map marker in real-time.
+  * Unsubscribe when leaving screen:
+
+    * emit `"vehicle:unsubscribe"` `{ vehicleId }`.
+
+Frontend tasks:
+
+* Map component (Leaflet, Google Maps, etc.).
+* Show connection status (connected/ disconnected).
+
+---
+
+## 2. Agent – what the frontend should support
+
+Agents are like branch staff. They share some customer features plus operational ones.
+
+### 2.1 Auth & Roles
+
+* After login, frontend should read `roles` from the user:
+
+  * If includes `"agent"`, show **agent dashboard** instead of customer UI.
+* Agents can still have `"customer"` role, but agent UI will be primary on back-office part.
+
+---
+
+### 2.2 Customer Management
+
+* **Create customer user**
+
+  * `POST /api/v1/users` with `roles: ["customer"]`.
+* **Create customer profile for user**
+
+  * `POST /api/v1/profiles` or a dedicated staff endpoint to create **CustomerProfile**.
+  * Agent can:
+
+    * fill customer info,
+    * upload driver license photo,
+    * set `verified` flag.
+* **Search & view customers**
+
+  * `GET /api/v1/users` with filters, then `GET /api/v1/profiles` for details.
+
+---
+
+### 2.3 Reservation Operations
+
+* **Create reservation on behalf of customer**
+
+  * Similar to customer flow, but agent can:
+
+    * pass `user_id` of the customer (target user),
+    * choose branch/vehicle class/model,
+    * override rate (depending on permissions + rate plans).
+
+* **Assign vehicle to reservation**
+
+  * On reservation detail page:
+
+    * Agent picks a vehicle from `/api/v1/vehicles` in same branch and available.
+    * `PATCH /api/v1/reservations/:id` with `vehicle_id`.
+
+* **Update statuses**
+
+  * From a dashboard:
+
+    * Mark as `confirmed`, `checked_out`, `returned`, `no_show`, `cancelled`.
+  * UI should show allowed actions per status.
+
+* **View all reservations for branch**
+
+  * `GET /api/v1/reservations` with filters:
+
+    * by branch (from pickup or dropoff),
+    * by status,
+    * by date range.
+
+---
+
+### 2.4 Fleet Management (Vehicles & Maintenance)
+
+* **Vehicle models** (often manager/admin, but agents may view):
+
+  * View list and detail via `/api/v1/vehicle-models`.
+
+* **Vehicle units**
+
+  * For their branch:
+
+    * `GET /api/v1/vehicles?branch_id=<agentBranch>`.
+  * Can:
+
+    * update odometer_km,
+    * update `status` (`active`, `maintenance`, `retired`),
+    * update `availability_state` (`available`, `reserved`, `out`, `blocked`),
+    * upload photos.
+
+* **Service orders & schedules**
+
+  * **Service orders**:
+
+    * Create a service order when car goes to workshop.
+    * Update status (open/in-progress/completed).
+  * **Service schedules**:
+
+    * View upcoming services per vehicle (based on time or odometer).
+  * Frontend should provide:
+
+    * create, list, update screens for both service orders and service schedules.
+
+* **Vehicle incidents**
+
+  * When there’s damage or accident:
+
+    * `POST /api/v1/vehicle-incidents` with vehicle_id, reservation_id (if any), type, severity, photos, description.
+    * Update incident status (open / under_review / resolved).
+  * Show incidents per vehicle and per reservation.
+
+---
+
+### 2.5 Pricing & Promotions (mostly Manager/Admin, but agent might use)
+
+* **Rate plans**
+
+  * Agents might **view** rate plans to quote customers:
+
+    * `/api/v1/rate-plans` with filters by branch, vehicle_class, etc.
+  * UI readability: show daily/weekly/monthly rates, seasonal overrides, taxes, fees.
+
+* **Promo codes**
+
+  * Agents can:
+
+    * verify a customer’s promo code by looking it up.
+    * Possibly create/update codes if allowed (manager/admin usually).
+
+---
+
+### 2.6 Driver & Driver Bookings (from agent’s side)
+
+* **Driver management**
+
+  * View pending driver profiles:
+
+    * show status `pending` / `approved` / `rejected`.
+  * Manager/Admin frontend lets them:
+
+    * Approve/reject driver profile, add rejection reason.
+
+* **Driver bookings**
+
+  * Agents can:
+
+    * create a driver booking on behalf of a customer.
+    * view all driver_bookings in branch/city.
+    * monitor statuses (requested, accepted, confirmed, completed…).
+    * help attach payments if done offline (cash/bank).
+
+---
+
+### 2.7 Chat (with customers, managers, admins)
+
+* **Conversations**
+
+  * Agent sees:
+
+    * conversations where they are a participant
+    * support conversations linked to their branch or reservations.
+
+* **Messaging**
+
+  * Same Socket.IO behaviour as customer:
+
+    * join conversations,
+    * send messages,
+    * see typing/read receipts.
+
+* **Context-aware chat**
+
+  * Frontend can show chat panel on:
+
+    * reservation detail screen (context_type = "reservation").
+    * driver_booking detail (context_type = "driver_booking").
+
+---
+
+### 2.8 Vehicle Tracking (Ops dashboard)
+
+* **Tracker management (Admin/Manager mainly)**
+
+  * Manage devices via:
+
+    * `/api/v1/vehicle-trackers` (CRUD).
+  * Attach tracker to vehicle (REST or via device endpoints + socket).
+
+* **Real-time vehicle map**
+
+  * Agent UI:
+
+    * list vehicles with trackers (from tracker API),
+    * for a selected vehicle:
+
+      * show last_location (`GET /api/v1/vehicle-trackers/vehicle/:vehicleId/location`),
+      * subscribe to live updates over `/tracking` namespace:
+
+        * emit `"vehicle:subscribe"` `{ vehicleId }`
+        * listen `"vehicle:location_update"` to update map.
+
+* **Use case**
+
+  * Track cars “out” on rentals.
+  * Check if a car is approaching the branch for dropoff.
+  * See if a car is off-route in case of incident.
+
+---
+
+If you hand this to a frontend dev, they’ll know:
+
+* **What screens / pages** are expected for **customer** vs **agent**.
+* **Which API areas** map to which parts of the UI (reservations, drivers, tracking, chat, incidents, service, etc.).
+* **Where WebSockets are involved** (chat + tracking) and how to connect/subscribe.
+
+If you want, next we can pick **one side** (for example: Customer mobile app) and outline a **screen-by-screen** flow with which endpoints & socket events each screen uses.
+
+
+
+
+
+http://13.61.185.238:5050/api-docs/
+
+
+https://github.com/codicoteam/morental-web
+
+
+
+https://car-rental-backend-system.onrender.com
+
+\
+
+
+
+CREATE MY APP_PALLETE FROM THE IMAGE ATTACHED, ALSO I WANT THE GLASSMORSPISM BECAUSE I AM GOING TO BE USING IT 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Nice, let’s do the **Admin** and **Branch Manager** side the same way: what the frontend dev should build, based on the APIs and models you already have.
+
+I’ll separate them clearly, but you’ll see a lot of overlap.
+
+---
+
+## 1. Branch Manager – expected frontend functionality
+
+Branch managers are “mini-admins” but usually **scoped to one (or a few) branches**. Their UI is basically:
+
+> “Everything about my branch’s fleet, reservations, drivers, staff, incidents & tracking.”
+
+### 1.1 Auth & Role-based UI
+
+* After login, frontend inspects `user.roles`.
+
+  * If includes `"manager"`, show **Manager Dashboard**.
+* Manager may also be `["customer","manager"]`, but branch management UI should be primary on back-office side.
+
+---
+
+### 1.2 Branch Dashboard
+
+**Goal:** overview of the branch.
+
+UI pieces:
+
+* **Branch info**
+
+  * From `GET /api/v1/branches/:id`:
+
+    * name, code, address, fullAddress, opening_hours, phone, email.
+* **Key KPIs (by branch)**
+
+  * Counts:
+
+    * active vehicles
+    * vehicles “out” / “available” / “maintenance”
+    * reservations today / upcoming
+    * open incidents
+  * These may come from:
+
+    * `GET /api/v1/vehicles?branch_id=<branchId>`
+    * `GET /api/v1/reservations` filtered by branch & date
+    * `GET /api/v1/vehicle-incidents` filtered by branch.
+
+Frontend job: show summary cards, charts, etc.
+
+---
+
+### 1.3 Staff & Agents for the Branch
+
+Managers don’t necessarily create users (could be admin-only), but they should:
+
+* **View users for their branch (agents)**
+
+  * UI that lists users with role `"agent"` (optionally filtered by branch if you have that relation somewhere).
+* **Assign / manage agent profiles**
+
+  * Using `/api/v1/profiles`:
+
+    * Agents have `AgentProfile` with:
+
+      * `branch_id`
+      * `can_apply_discounts`
+      * `verified` flag.
+  * Manager UI:
+
+    * Approve/verify an agent profile.
+    * Change `branch_id`.
+    * Toggle `can_apply_discounts`.
+
+---
+
+### 1.4 Branch Fleet Management
+
+Manager sees **only vehicles in their branch**.
+
+* **Vehicle models**
+
+  * Mostly read-only for manager (full control usually belongs to admin), but:
+
+    * `GET /api/v1/vehicle-models` for understanding what’s in use.
+
+* **Vehicle units (per branch)**
+
+  * `GET /api/v1/vehicles?branch_id=<managerBranchId>`
+  * Manager UI actions:
+
+    * Update `status` (`active`, `maintenance`, `retired`).
+    * Update `availability_state` (`available`, `reserved`, `out`, `blocked`).
+    * Update `odometer_km`, `color`, `photos`.
+  * Detail page per vehicle:
+
+    * show last_service_at, last_service_odometer_km, metadata (gps_device_id, notes, seats/doors, features).
+
+* **Service schedules and service orders (per branch)**
+
+  * List **service schedules** linked to vehicles in that branch:
+
+    * upcoming maintenance by date or by odometer.
+  * List **service orders**:
+
+    * open / in-progress / completed.
+  * Manager actions:
+
+    * Create service order for a vehicle that needs workshop.
+    * Mark service order as completed.
+    * Add notes, service provider, costs.
+
+---
+
+### 1.5 Branch Reservations (Car Rentals)
+
+Manager needs a **reservations board** for the branch.
+
+* **List reservations tied to the branch**
+
+  * Filter by:
+
+    * pickup.branch_id == branch, or
+    * dropoff.branch_id == branch.
+  * Show:
+
+    * code, customer name, vehicle model, dates, status, payment_summary, promo codes used.
+
+* **Reservation actions**
+
+  * **Assign/Change vehicle**:
+
+    * from unassigned → assigned to a specific vehicle.
+  * **Status updates**:
+
+    * `pending` → `confirmed`
+    * `confirmed` → `checked_out`
+    * `checked_out` → `returned`
+    * `pending/confirmed` → `cancelled` or `no_show`
+  * **View payment info**
+
+    * See payments linked to the reservation (via Payment model).
+    * See if outstanding or fully paid.
+
+* **Manual override / approvals**
+
+  * If you use `approval_limit_usd` in `ManagerProfile`:
+
+    * UI should indicate if manager can approve extra fees, discounts or manual price overrides up to a certain amount.
+
+---
+
+### 1.6 Branch Promo Code & Discount Monitoring
+
+Managers might not create promo codes, but:
+
+* **View and filter promo codes**
+
+  * `GET /api/v1/promo-codes` with branch filters (if you tied promo codes to branches via constraints).
+* **Usage monitoring**
+
+  * Show which reservations used which codes at the branch.
+
+If you allow managers to create limited promo codes:
+
+* UI for:
+
+  * creating code,
+  * setting type (`percent/fixed`), value, currency,
+  * constraints (classes, branch_ids, min_days),
+  * setting validity period.
+
+---
+
+### 1.7 Driver Profiles & Driver Bookings (Manager view)
+
+* **Driver profiles**
+
+  * See list of **drivers** in their city/region (or all).
+  * Filter by status: `pending`, `approved`, `rejected`.
+  * Manager can:
+
+    * Review driver profile (documents, licence image, identity_document image).
+    * Approve or reject driver profile (if you let managers do it, or reserve that for admin).
+    * Toggle `is_available`.
+
+* **Driver bookings (for “hire a driver” feature)**
+
+  * See all driver bookings in their area (e.g. where pickup location / base_city matches).
+  * View statuses:
+
+    * `requested`, `accepted_by_driver`, `awaiting_payment`, `confirmed`, `completed`, `cancelled_*`, `expired`.
+  * Actions:
+
+    * Assist driver/customer in changing time or cancelling.
+    * See linked payment and status.
+    * See ratings & reviews of drivers.
+
+---
+
+### 1.8 Vehicle Incidents & Damage
+
+Managers are **primary users** here.
+
+* **Incidents list per branch**
+
+  * `GET /api/v1/vehicle-incidents?branch_id=<branchId>`
+  * Show:
+
+    * type (`accident`, `scratch`, `tyre`, `windshield`, `mechanical_issue`, etc.)
+    * severity (`minor`, `major`),
+    * photos,
+    * estimated_cost, final_cost,
+    * status (`open`, `under_review`, `resolved`),
+    * linked vehicle and reservation (if on-rental).
+
+* **Incident actions**
+
+  * Create new incident when damage noticed on check-in / check-out.
+  * Update incident status (e.g. open → under_review → resolved).
+  * Log cost and resolution notes.
+  * This is where penalty logic to customer/driver might be triggered (even if manual at first).
+
+---
+
+### 1.9 Chat (Manager communications)
+
+Manager uses chat to communicate with:
+
+* Customers (about their reservations, complaints).
+* Agents (internal ops).
+* Admins (escalations).
+
+Frontend requirements:
+
+* **Conversation list** filtered to manager’s user ID.
+* Open conversation view with:
+
+  * Messages from `GET /api/v1/chats/messages?conversationId=...`
+  * Realtime updates via Socket.IO (same chat events as customer/agent).
+* Start new conversation:
+
+  * For example, “Support ticket” or “Chat about reservation #HRE-2025-000123”.
+  * Set conversation `context_type = "reservation"` and `context_id = reservation._id`.
+
+---
+
+### 1.10 Vehicle Tracking – Branch View
+
+Managers use tracking to monitor branch vehicles in real time.
+
+* **Tracker devices overview**
+
+  * `GET /api/v1/vehicle-trackers?branch_id=<branchId>`:
+
+    * see which trackers are attached to which vehicles,
+    * status (`active`, `inactive`, `maintenance`),
+    * last_seen_at, last_location, notes.
+* **Live map by branch**
+
+  * UI: list all “out” vehicles with trackers.
+  * For each vehicle:
+
+    * show last location using `GET /api/v1/vehicle-trackers/vehicle/:vehicleId/location`.
+  * Subscribe to real-time updates:
+
+    * Connect to `/tracking` namespace with JWT (authToken).
+    * emit `vehicle:subscribe` `{ vehicleId }`.
+    * listen to `vehicle:location_update` events, update map markers.
+
+This gives managers a “Where are my cars right now?” screen.
+
+---
+
+## 2. Admin – expected frontend functionality
+
+Admins are **system-level**. They can:
+
+> Create branches, define pricing, manage users & roles, configure trackers, oversee everything.
+
+### 2.1 User & Role Management
+
+* **User list**
+
+  * `GET /api/v1/users` with filters (email, phone, roles, status).
+* **User detail**
+
+  * Basic user info + roles, auth providers, status.
+* **Create / update user**
+
+  * Create users with roles `customer`, `agent`, `manager`, `admin`, `driver`.
+  * Change roles (e.g. upgrade user to agent or manager).
+* **Deactivate / suspend accounts**
+
+  * Update `status` to `suspended` or `deleted` (soft-delete).
+
+---
+
+### 2.2 Profile Lifecycle (System-level)
+
+* Admin sees **all profiles**:
+
+  * **Customer profiles**
+
+    * For KYC checks, blocklisting, etc.
+  * **Agent profiles**
+
+    * Approve/verify agent status, check branch assignments.
+  * **Manager profiles**
+
+    * Manage branch scope (branch_ids).
+    * Set `approval_limit_usd`.
+  * **Admin profiles**
+
+    * Set `super_admin` flag for full power.
+
+* UI provides:
+
+  * search by user, role, branch.
+  * ability to edit profiles or revoke roles.
+
+---
+
+### 2.3 Branch Management
+
+Admins **own** branches.
+
+* **CRUD on branches**
+
+  * `GET /api/v1/branches`
+  * `POST /api/v1/branches` – create new branch.
+  * `PATCH /api/v1/branches/:id` – update address, opening hours, geo, contact details, active state.
+  * `DELETE /api/v1/branches/:id` – maybe soft-delete or “inactive”.
+
+* **Set opening hours**
+
+  * UI for per-day opening periods (mon–sun, multiple ranges).
+
+* **Set location**
+
+  * map picker to set `geo.coordinates` or text fields.
+
+---
+
+### 2.4 Fleet Definition (Global)
+
+* **Vehicle models**
+
+  * Full CRUD:
+
+    * define makes, models, years,
+    * class, transmission, fuel_type, seats, doors, features, images.
+  * This is your master fleet catalog.
+
+* **Vehicle units**
+
+  * Global list of all vehicles in the company.
+  * Admin operations:
+
+    * move vehicle between branches (change branch_id),
+    * retire vehicles (`status="retired"`),
+    * override metadata (gps_device_id etc.),
+    * mark certain cars as “demo”, “VIP” via notes, etc.
+
+---
+
+### 2.5 Pricing & Rate Plans
+
+Admins define **how pricing works**.
+
+* **Rate plan management**
+
+  * `GET /api/v1/rate-plans` – list all.
+  * `POST /api/v1/rate-plans` – create new plan with:
+
+    * scope: branch_id (optional), vehicle_class, vehicle_model_id or vehicle_id,
+    * currency,
+    * base rates (daily/weekly/monthly/weekend),
+    * seasonal_overrides (with SeasonSchema),
+    * taxes, fees,
+    * valid_from, valid_to, active flag, name, notes.
+  * `PATCH /api/v1/rate-plans/:id` – edit plan details.
+  * `DELETE /api/v1/rate-plans/:id` or de-activate (set active=false).
+
+* **Frontend responsibilities:**
+
+  * Manage complex form for rate plans.
+  * Visualize **effective price** for a given date-range (for testing).
+  * Show warnings when overlapping plans or invalid rules.
+
+---
+
+### 2.6 Promo Codes
+
+Admins can run **promos/coupons**.
+
+* **Promo code management**
+
+  * `GET /api/v1/promo-codes` – list with filters (active, date range, code).
+  * `POST /api/v1/promo-codes` – create new:
+
+    * code (WELCOME10),
+    * type `percent` or `fixed`,
+    * value,
+    * currency (for fixed),
+    * valid_from/valid_to,
+    * usage_limit, used_count,
+    * constraints:
+
+      * allowed vehicle classes,
+      * min_days,
+      * branch_ids.
+  * `PATCH /api/v1/promo-codes/:id` – edit details or deactivate.
+  * `DELETE` or set `active=false`.
+
+* **Reporting**
+
+  * Admin view of **promo usage**:
+
+    * which reservations used each code,
+    * revenue impact.
+
+---
+
+### 2.7 System-wide Reservations & Payments
+
+* **Reservations overview**
+
+  * Global list across all branches.
+  * Filters:
+
+    * by date range,
+    * by branch,
+    * by status,
+    * by vehicle_class / model.
+  * Tools:
+
+    * export (CSV),
+    * stats for occupancy & utilization.
+
+* **Payment overview**
+
+  * List payments:
+
+    * filter by status, provider, date, branch (indirect via reservation).
+  * Inspect each payment’s details:
+
+    * provider_ref, pollUrl, paymentStatus (paid/pending/failed/…),
+    * linked reservation or driver booking,
+    * promo_code_id, promo_code snapshot.
+
+* **Manual adjustments**
+
+  * Admin may:
+
+    * forcibly mark payment as “void” or “refunded” if necessary.
+    * handle disputes and write notes.
+
+---
+
+### 2.8 Driver & Driver Bookings (System governance)
+
+* **Drivers**
+
+  * Admin sees all driver profiles.
+  * Approve / reject:
+
+    * check ID and driver licence images,
+    * set status, rejection_reason,
+    * toggle `is_available`.
+  * Manage hourly_rate, base_city/region/country.
+
+* **Driver bookings (global view)**
+
+  * See all driver bookings:
+
+    * monitor statuses, payment_status_snapshot,
+    * view conflict / performance.
+  * Set policies for cancellation, etc. (maybe saved as configuration later).
+
+---
+
+### 2.9 Vehicle Trackers (System-level tracking management)
+
+Admins are the ones configuring tracking:
+
+* **Tracker device management**
+
+  * `GET /api/v1/vehicle-trackers` – list all devices.
+  * `POST /api/v1/vehicle-trackers` – register new device with:
+
+    * device_id, label, notes, settings.
+  * `PATCH /api/v1/vehicle-trackers/:id` – update settings (intervals, status).
+  * `DELETE` – remove tracker (or mark as `maintenance` / `inactive`).
+
+* **Attach / detach**
+
+  * Admin UI can:
+
+    * attach tracker to a vehicle, which sets vehicle_id, branch_id, status, attached_at.
+    * detach tracker with `detach_reason`.
+
+* **Live tracking**
+
+  * Admin may have a “global map”:
+
+    * show locations of all active trackers/vehicles.
+    * filter per branch, status, vehicle_class.
+  * Uses same WebSocket `/tracking` namespace as manager, but with access to all vehicles.
+
+---
+
+### 2.10 Chat & Support Oversight
+
+Admin may need to **audit or monitor** communications:
+
+* **View conversations by context**
+
+  * All chats with `context_type = "support"` or by reservation.
+* **Read-only view of messages**
+
+  * For QA or dispute resolution.
+* **Global search**
+
+  * Search conversations by user, reservation, driver_booking, etc.
+
+(You can decide whether admins may “join” conversations as participants or just view logs.)
+
+---
+
+### 2.11 Configuration & System Settings (future)
+
+Even if not fully modeled yet, your Admin UI is the right place later for:
+
+* Global settings: default currency, time zone, cancellation policies.
+* File storage config (for images / attachments).
+* Email/SMS templates for notifications.
+
+---
+
+If your frontend dev looks at the **Customer/Agent** breakdown (previous answer) and this **Manager/Admin** breakdown together, they’ll have a pretty complete picture of:
+
+* What screens are needed per role.
+* Which existing endpoints they should call.
+* Where WebSockets (chat + tracking) come into play.
+* What data needs to be visible or editable at each level of responsibility.
+
+If you want, we can now take **one role + one feature** (e.g. “Admin → RatePlan management”) and design a more detailed UI flow + payload examples so the frontend and backend stay perfectly aligned.
