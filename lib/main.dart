@@ -1,50 +1,41 @@
-// main.dart
 import 'package:flutter/material.dart';
-import 'features/agent/checkout/checkout_screen.dart';
-import 'features/agent/views/agent_dashboard.dart';
-import 'features/auth/views/agent_auth_screen.dart';
-import 'features/onboarding/views/onboarding_screen.dart';
+import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 
-void main() {
-  runApp(MyApp());
+import 'app/core/themes/app_theme.dart';
+import 'app/routes/app_pages.dart';
+import 'app/routes/app_routes.dart';
+
+void main() async {
+  // Initialize GetStorage
+  await GetStorage.init();
+  
+  runApp(const MoRentalApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MoRentalApp extends StatelessWidget {
+  const MoRentalApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Mo_Rental',
-      theme: ThemeData(
-        primaryColor: Colors.blue,
-        colorScheme: ColorScheme.light(primary: Colors.blue),
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.blue,
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            minimumSize: Size(double.infinity, 50),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        ),
-      ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => OnboardingScreen(),
-        '/agent-auth': (context) => AgentAuthScreen(),
-        '/agent-dashboard': (context) => AgentDashboard(),
-        '/checkout': (context) => CheckoutScreen(
-          bookingId: 'BK001',
-          customerName: 'John Doe',
-          vehicleInfo: 'Toyota Corolla - ABC123',
-        ),
-      },
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
+      title: "MoRental",
+      
+      // Theme setup
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.light,
+
+      // Navigation setup
+      initialRoute: AppRoutes.login,
+      getPages: AppPages.pages,
+      
+      // Enable GetX logging in debug mode
+      enableLog: true,
+      logWriterCallback: (String text, {bool isError = false}) {
+        if (isError || Get.isLogEnable) print(text);
+      },
     );
   }
 }

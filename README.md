@@ -1,4 +1,4 @@
-# car_rental
+# carrental
 
 A new Flutter project.
 

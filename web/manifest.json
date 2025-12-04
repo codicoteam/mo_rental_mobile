@@ -1,6 +1,6 @@
 {
-    "name": "car_rental",
-    "short_name": "car_rental",
+    "name": "carrental",
+    "short_name": "carrental",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
