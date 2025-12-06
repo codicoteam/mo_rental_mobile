@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../modules/promo_code/views/promo_code_screen.dart';
+import '../../modules/chat/views/conversations_list_screen.dart';
 
 class SidebarWidget extends StatefulWidget {
   final Widget child;
@@ -27,6 +28,12 @@ class _SidebarWidgetState extends State<SidebarWidget> {
       icon: Icons.home,
       title: 'Home',
       route: '/home',
+    ),
+    SidebarItem(
+      icon: Icons.chat,
+      title: 'Messages',
+      route: '/chat/conversations',
+      badgeCount: 0,
     ),
     SidebarItem(
       icon: Icons.local_offer,
@@ -86,13 +93,12 @@ class _SidebarWidgetState extends State<SidebarWidget> {
     final item = _sidebarItems[index];
     
     if (item.route == '/promo-codes') {
-      // Navigate to PromoCodeScreen
       Get.to(() => const PromoCodeScreen());
+    } else if (item.route == '/chat/conversations') {
+      Get.to(() => const ConversationsListScreen());
     } else if (item.route == '/home') {
-      // If already on home, just close sidebar
       _toggleSidebar();
     } else {
-      // Handle other routes
       Get.snackbar(
         'Coming Soon',
         '${item.title} feature is under development',
@@ -111,12 +117,10 @@ class _SidebarWidgetState extends State<SidebarWidget> {
     return Scaffold(
       body: Stack(
         children: [
-          // Main Content
           Positioned.fill(
             child: widget.child,
           ),
 
-          // Sidebar Overlay
           if (_isSidebarOpen)
             GestureDetector(
               onTap: _toggleSidebar,
@@ -125,7 +129,6 @@ class _SidebarWidgetState extends State<SidebarWidget> {
               ),
             ),
 
-          // Sidebar Drawer
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
@@ -139,7 +142,6 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                   color: Colors.white,
                   child: Column(
                     children: [
-                      // User Profile Section
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
@@ -209,7 +211,6 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                         ),
                       ),
 
-                      // Menu Items
                       Expanded(
                         child: ListView.separated(
                           padding: const EdgeInsets.symmetric(vertical: 20),
@@ -270,10 +271,66 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                         ),
                       ),
 
-                      // Promo Code Special Section
                       Container(
                         padding: const EdgeInsets.all(16),
                         margin: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.purple.shade200,
+                            width: 1,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.chat,
+                                  color: Colors.purple.shade700,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Chat Support',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.purple.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                _toggleSidebar();
+                                Get.to(() => const ConversationsListScreen());
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.purple.shade600,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                minimumSize: const Size(double.infinity, 40),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.message, size: 16),
+                                  SizedBox(width: 8),
+                                  Text('Start Chat'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                         decoration: BoxDecoration(
                           color: Colors.orange.shade50,
                           borderRadius: BorderRadius.circular(12),
@@ -328,7 +385,6 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                         ),
                       ),
 
-                      // Logout Button
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: ElevatedButton.icon(
@@ -357,7 +413,6 @@ class _SidebarWidgetState extends State<SidebarWidget> {
             ),
           ),
 
-          // Sidebar Toggle Button (Hamburger Menu)
           Positioned(
             top: MediaQuery.of(context).padding.top + 10,
             left: 10,

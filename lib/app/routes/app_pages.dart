@@ -3,7 +3,11 @@ import '../bindings/app_bindings.dart';
 import '../features/modules/auth/views/login_screen.dart';
 import '../features/modules/auth/views/register_screen.dart';
 import '../features/modules/auth/views/verify_email_screen.dart';
+import '../features/modules/bindings/chat_binding.dart';
 import '../features/modules/bindings/rate_plan_binding.dart';
+import '../features/modules/chat/views/chat_detail_screen.dart';
+import '../features/modules/chat/views/conversations_list_screen.dart';
+import '../features/modules/chat/views/create_conversation_screen.dart';
 import '../features/modules/rate_plans/views/rate_plans_screen.dart';
 import '../features/modules/welcome_screens/onboarding_screens/views/onboarding_screen.dart';
 import '../features/modules/welcome_screens/splash_screen/views/splash_screen.dart';
@@ -53,5 +57,21 @@ class AppPages {
       name: AppRoutes.promoCodes,
       page: () => PromoCodeScreen(),
     ),
+     GetPage(
+      name: AppRoutes.chatConversations,
+      page: () => const ConversationsListScreen(),
+      binding: ChatBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.chatDetail,
+      page: () => ChatDetailScreen(conversationId: Get.parameters['id'] ?? ''),
+      binding: ChatBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.createChat,
+      page: () => const CreateConversationScreen(),
+      binding: ChatBinding(),
+    ),
+
   ];
 }
