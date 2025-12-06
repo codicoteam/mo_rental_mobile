@@ -5,15 +5,14 @@ import '../../../data/services/rate_plan_service.dart';
 import '../../../widgets/sidebar_widget/sidebar_widget.dart';
 import '../../car_details/views/car_detail_screen.dart';
 import '../../promo_code/views/promo_code_screen.dart';
+import '../../chat/views/conversations_list_screen.dart';
 import '../../rate_plans/controllers/rate_plan_controller.dart';
-
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Ensure services are initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!Get.isRegistered<RatePlanService>()) {
         Get.put(RatePlanService());
@@ -25,7 +24,7 @@ class HomeScreen extends StatelessWidget {
 
     return SidebarWidget(
       initiallyOpen: false,
-      child: _HomeContent(), // Content wrapped in sidebar
+      child: _HomeContent(),
     );
   }
 }
@@ -45,10 +44,8 @@ class _HomeContent extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top padding to avoid overlap with sidebar toggle button
             const SizedBox(height: 60),
 
-            // User Info Card
             Card(
               elevation: 2,
               child: Padding(
@@ -100,13 +97,23 @@ class _HomeContent extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // Quick Access to Promo Codes
-                    IconButton(
-                      onPressed: () {
-                        Get.to(() => const PromoCodeScreen());
-                      },
-                      icon: const Icon(Icons.local_offer, color: Colors.orange),
-                      tooltip: 'View Promo Codes',
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            Get.to(() => const ConversationsListScreen());
+                          },
+                          icon: const Icon(Icons.chat, color: Colors.purple),
+                          tooltip: 'Messages',
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            Get.to(() => const PromoCodeScreen());
+                          },
+                          icon: const Icon(Icons.local_offer, color: Colors.orange),
+                          tooltip: 'View Promo Codes',
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -126,19 +133,18 @@ class _HomeContent extends StatelessWidget {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  carCard(context,
+                  _carCard(context,
                       "assets/images/campbell-3ZUsNJhi_Ik-unsplash.jpg", "BMW M4"),
-                  carCard(context,
+                  _carCard(context,
                       "assets/images/joshua-koblin-eqW1MPinEV4-unsplash.jpg",
                       "Mercedes AMG"),
-                  carCard(context,
+                  _carCard(context,
                       "assets/images/peter-broomfield-m3m-lnR90uM-unsplash.jpg",
                       "Audi R8"),
                 ],
               ),
             ),
 
-            // Quick Stats
             const SizedBox(height: 30),
             const Text(
               "Quick Stats",
@@ -160,6 +166,13 @@ class _HomeContent extends StatelessWidget {
                   color: Colors.blue,
                 ),
                 _buildStatCard(
+                  icon: Icons.chat,
+                  title: "Messages",
+                  value: "0",
+                  color: Colors.purple,
+                  onTap: () => Get.to(() => const ConversationsListScreen()),
+                ),
+                _buildStatCard(
                   icon: Icons.local_offer,
                   title: "Active Promos",
                   value: "0",
@@ -172,27 +185,21 @@ class _HomeContent extends StatelessWidget {
                   value: "0",
                   color: Colors.red,
                 ),
-                _buildStatCard(
-                  icon: Icons.history,
-                  title: "History",
-                  value: "0",
-                  color: Colors.green,
-                ),
               ],
             ),
 
-            // Promo Code Banner
             const SizedBox(height: 30),
             _buildPromoBanner(),
 
-            // Recent Activity
+            const SizedBox(height: 20),
+            _buildChatBanner(),
+
             const SizedBox(height: 30),
             _buildRecentActivity(),
           ],
         ),
       ),
 
-      // Floating Action Button for Promo Codes
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Get.to(() => const PromoCodeScreen());
@@ -206,7 +213,7 @@ class _HomeContent extends StatelessWidget {
     );
   }
 
-  Widget carCard(BuildContext context, String img, String name) {
+  Widget _carCard(BuildContext context, String img, String name) {
     return GestureDetector(
       onTap: () {
         Get.to(
@@ -331,6 +338,68 @@ class _HomeContent extends StatelessWidget {
               ),
             ),
             child: const Text('View Offers'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChatBanner() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.purple.shade100, Colors.purple.shade50],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.purple.shade200),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.support_agent,
+            size: 40,
+            color: Colors.purple,
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '24/7 Chat Support',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.purple,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'Need help? Chat with our support team anytime.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          ElevatedButton(
+            onPressed: () {
+              Get.to(() => const ConversationsListScreen());
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.purple,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Chat Now'),
           ),
         ],
       ),
