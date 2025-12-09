@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../widgets/custom_text_field.dart/custom_text_field.dart';
 import '../controllers/auth_controller.dart';
+import '../../../../core/themes/app_palette.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -20,8 +21,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   final AuthController _authController = Get.find<AuthController>();
 
-  // Add this for local error display
   final RxString _localError = ''.obs;
+  final RxBool _showPassword = false.obs;
+  final RxBool _showConfirmPassword = false.obs;
 
   @override
   void dispose() {
@@ -34,7 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _register() async {
-    _localError.value = ''; // Clear previous errors
+    _localError.value = '';
 
     if (_formKey.currentState!.validate()) {
       if (_passwordController.text != _confirmPasswordController.text) {
@@ -48,7 +50,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
       }
 
-      // Show loading
       _authController.isLoading.value = true;
 
       try {
@@ -60,7 +61,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
 
         if (response.success && response.data != null) {
-          // Navigate to verify email screen WITH the email
           Get.offNamed(
             '/verify-email',
             arguments: {'email': _emailController.text.trim()},
@@ -72,14 +72,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             colorText: Colors.white,
           );
         } else {
-          // Show error on screen AND snackbar
           _localError.value = response.message;
           Get.snackbar(
             'Registration Failed',
             response.message,
             backgroundColor: Colors.red,
             colorText: Colors.white,
-            duration: Duration(seconds: 5),
+            duration: const Duration(seconds: 5),
           );
         }
       } catch (e) {
@@ -89,7 +88,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           e.toString(),
           backgroundColor: Colors.red,
           colorText: Colors.white,
-          duration: Duration(seconds: 5),
+          duration: const Duration(seconds: 5),
         );
       } finally {
         _authController.isLoading.value = false;
@@ -99,135 +98,257 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('Create Account'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 20),
-              CustomTextField(
-                controller: _fullNameController,
-                labelText: 'Full Name',
-                hintText: 'Enter your full name',
-                validator: Validators.validateFullName,
-                prefixIcon: const Icon(Icons.person),
+      body: Stack(
+        children: [
+          // Background gradient
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppPalette.primaryBlue.withOpacity(0.9),
+                  Colors.black87,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(height: 20),
-              CustomTextField(
-                controller: _emailController,
-                labelText: 'Email',
-                hintText: 'Enter your email',
-                keyboardType: TextInputType.emailAddress,
-                validator: Validators.validateEmail,
-                prefixIcon: const Icon(Icons.email),
-              ),
-              const SizedBox(height: 20),
-              CustomTextField(
-                controller: _phoneController,
-                labelText: 'Phone Number',
-                hintText: 'Enter phone number (e.g., +263771234567)',
-                keyboardType: TextInputType.phone,
-                validator: Validators.validatePhone,
-                prefixIcon: const Icon(Icons.phone),
-                maxLength: 15,
-              ),
-              const SizedBox(height: 20),
-              CustomTextField(
-                controller: _passwordController,
-                labelText: 'Password',
-                hintText: 'Enter your password',
-                obscureText: true,
-                validator: Validators.validatePassword,
-                prefixIcon: const Icon(Icons.lock),
-              ),
-              const SizedBox(height: 20),
-              CustomTextField(
-                controller: _confirmPasswordController,
-                labelText: 'Confirm Password',
-                hintText: 'Re-enter your password',
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please confirm your password';
-                  }
-                  return null;
-                },
-                prefixIcon: const Icon(Icons.lock_outline),
-              ),
+            ),
+          ),
 
-              // ADD THIS ERROR DISPLAY WIDGET
-              Obx(() {
-                if (_localError.value.isNotEmpty) {
-                  return Container(
-                    margin: EdgeInsets.symmetric(vertical: 10),
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.shade200),
-                    ),
-                    child: Row(
+          // Neon/glow circles
+          Positioned(
+            top: -50,
+            right: -30,
+            child: _neonCircle(180, AppPalette.primaryBlue.withOpacity(0.2)),
+          ),
+          Positioned(
+            bottom: -50,
+            left: -40,
+            child: _neonCircle(150, AppPalette.primaryBlue.withOpacity(0.1)),
+          ),
+
+          SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 80),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Title
+                Text(
+                  "Create Account",
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 30,
+                    shadows: [
+                      const Shadow(
+                        color: Colors.white24,
+                        blurRadius: 10,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Join the future with your account",
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: Colors.white70,
+                  ),
+                ),
+                const SizedBox(height: 40),
+
+                // Glass card
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
                       children: [
-                        Icon(Icons.error_outline, color: Colors.red),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            _localError.value,
-                            style: TextStyle(color: Colors.red),
-                          ),
+                        CustomTextField(
+                          controller: _fullNameController,
+                          labelText: 'Full Name',
+                          hintText: 'Enter your full name',
+                          validator: Validators.validateFullName,
+                          prefixIcon: const Icon(Icons.person, color: Colors.white70),
+                          style: const TextStyle(color: Colors.white),
                         ),
+                        const SizedBox(height: 20),
+                        CustomTextField(
+                          controller: _emailController,
+                          labelText: 'Email',
+                          hintText: 'Enter your email',
+                          keyboardType: TextInputType.emailAddress,
+                          validator: Validators.validateEmail,
+                          prefixIcon: const Icon(Icons.email, color: Colors.white70),
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        const SizedBox(height: 20),
+                        CustomTextField(
+                          controller: _phoneController,
+                          labelText: 'Phone Number',
+                          hintText: 'Enter phone number',
+                          keyboardType: TextInputType.phone,
+                          validator: Validators.validatePhone,
+                          prefixIcon: const Icon(Icons.phone, color: Colors.white70),
+                          maxLength: 15,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        const SizedBox(height: 20),
+                        Obx(() => CustomTextField(
+                              controller: _passwordController,
+                              labelText: 'Password',
+                              hintText: 'Enter your password',
+                              obscureText: !_showPassword.value,
+                              validator: Validators.validatePassword,
+                              prefixIcon: const Icon(Icons.lock, color: Colors.white70),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _showPassword.value
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.white70,
+                                ),
+                                onPressed: () =>
+                                    _showPassword.value = !_showPassword.value,
+                              ),
+                              style: const TextStyle(color: Colors.white),
+                            )),
+                        const SizedBox(height: 20),
+                        Obx(() => CustomTextField(
+                              controller: _confirmPasswordController,
+                              labelText: 'Confirm Password',
+                              hintText: 'Re-enter your password',
+                              obscureText: !_showConfirmPassword.value,
+                              validator: (v) =>
+                                  v == null || v.isEmpty ? 'Please confirm your password' : null,
+                              prefixIcon:
+                                  const Icon(Icons.lock_outline, color: Colors.white70),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _showConfirmPassword.value
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.white70,
+                                ),
+                                onPressed: () =>
+                                    _showConfirmPassword.value = !_showConfirmPassword.value,
+                              ),
+                              style: const TextStyle(color: Colors.white),
+                            )),
                       ],
                     ),
-                  );
-                }
-                return SizedBox.shrink();
-              }),
-
-              // ADD THIS DEBUG INFO WIDGET (optional)
-              Obx(() {
-                if (_authController.errorMessage.value.isNotEmpty) {
-                  return Container(
-                    margin: EdgeInsets.symmetric(vertical: 5),
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.orange.shade200),
-                    ),
-                    child: Text(
-                      'Controller Error: ${_authController.errorMessage.value}',
-                      style: TextStyle(
-                          color: Colors.orange.shade800, fontSize: 12),
-                    ),
-                  );
-                }
-                return SizedBox.shrink();
-              }),
-
-              const SizedBox(height: 30),
-              Obx(() => CustomElevatedButton(
-                    text: 'Register',
-                    onPressed: _register,
-                    isLoading: _authController.isLoading.value,
-                  )),
-              const SizedBox(height: 20),
-              TextButton(
-                onPressed: () => Get.back(),
-                child: const Text(
-                  'Already have an account? Sign In',
-                  style: TextStyle(fontSize: 16),
+                  ),
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 15),
+
+                // Local Error Display
+                Obx(() {
+                  if (_localError.value.isNotEmpty) {
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, color: Colors.red),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _localError.value,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }),
+
+                const SizedBox(height: 25),
+
+                Obx(() => SizedBox(
+                      height: 55,
+                      child: ElevatedButton(
+                        onPressed: _authController.isLoading.value ? null : _register,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppPalette.primaryBlue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: _authController.isLoading.value
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text(
+                                'Register',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                    )),
+
+                const SizedBox(height: 20),
+
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: const Text(
+                    'Already have an account? Sign In',
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+
+  Widget _neonCircle(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+        boxShadow: [
+          BoxShadow(
+            color: color,
+            blurRadius: 60,
+            spreadRadius: 30,
+          ),
+        ],
       ),
     );
   }

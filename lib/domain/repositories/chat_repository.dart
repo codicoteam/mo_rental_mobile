@@ -1,17 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import '../../../app/features/data/services/api_service.dart';
 import '../../app/features/data/models/chat_models/chat_models.dart';
 
 class ChatRepository {
-  late final ApiService _apiService;
   final GetStorage _storage = GetStorage();
 
-  ChatRepository() {
-    _apiService = Get.find<ApiService>();
-  }
+  ChatRepository();
 
   // Get auth token
   String? _getAuthToken() {
@@ -69,48 +64,52 @@ class ChatRepository {
   }
 
   // Get single conversation by ID - FIXED
- // Get single conversation by ID - FIXED
-Future<ChatConversation> getConversationById(String conversationId) async {
-  try {
-    final token = _getAuthToken();
-    if (token == null) {
-      throw Exception('No authentication token found');
-    }
-
-    print('📡 Fetching conversation: $conversationId');
-
-    // BYPASS THE BROKEN ApiService - use http directly
-    final url = Uri.parse('http://13.61.185.238:5050/api/v1/chats/conversations/$conversationId');
-    final response = await http.get(
-      url,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'accept': 'application/json',
-      },
-    );
-
-    print('📊 HTTP Response Status: ${response.statusCode}');
-    print('📄 HTTP Response Body: ${response.body}');
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-
-      if (jsonResponse['success'] == true && jsonResponse.containsKey('data')) {
-        final conversation = ChatConversation.fromJson(jsonResponse['data'] as Map<String, dynamic>);
-        print('✅ Successfully loaded conversation: ${conversation.id}');
-        return conversation;
-      } else {
-        throw Exception('API returned success: false');
+  // Get single conversation by ID - FIXED
+  Future<ChatConversation> getConversationById(String conversationId) async {
+    try {
+      final token = _getAuthToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
       }
-    } else {
-      throw Exception('Request failed with status ${response.statusCode}');
-    }
-  } catch (e) {
-    print('❌ Repository error in getConversationById: $e');
-    rethrow;
-  }
-}
 
+      print('📡 Fetching conversation: $conversationId');
+
+      // BYPASS THE BROKEN ApiService - use http directly
+      final url = Uri.parse(
+          'http://13.61.185.238:5050/api/v1/chats/conversations/$conversationId');
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'accept': 'application/json',
+        },
+      );
+
+      print('📊 HTTP Response Status: ${response.statusCode}');
+      print('📄 HTTP Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+
+        if (jsonResponse['success'] == true &&
+            jsonResponse.containsKey('data')) {
+          final conversation = ChatConversation.fromJson(
+              jsonResponse['data'] as Map<String, dynamic>);
+          print('✅ Successfully loaded conversation: ${conversation.id}');
+          return conversation;
+        } else {
+          throw Exception('API returned success: false');
+        }
+      } else {
+        throw Exception('Request failed with status ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Repository error in getConversationById: $e');
+      rethrow;
+    }
+  }
+
+  // Create new conversation - FIXED
   // Create new conversation - FIXED
   Future<ChatConversation> createConversation(
     CreateConversationRequest request,
@@ -124,40 +123,36 @@ Future<ChatConversation> getConversationById(String conversationId) async {
       print('📤 Creating conversation...');
       print('📦 Request: ${request.toJson()}');
 
-      final response = await _apiService.post<dynamic>(
-        '/api/v1/chats/conversations',
-        request.toJson(),
+      // BYPASS THE BROKEN ApiService - use http directly
+      final url =
+          Uri.parse('http://13.61.185.238:5050/api/v1/chats/conversations');
+      final response = await http.post(
+        url,
         headers: {
           'Authorization': 'Bearer $token',
           'accept': 'application/json',
           'Content-Type': 'application/json',
         },
+        body: jsonEncode(request.toJson()),
       );
 
-      print('📊 Create Conversation Response - Success: ${response.success}');
-      print('📊 Create Conversation Response - Message: ${response.message}');
-      print('📊 Create Conversation Response - Data: ${response.data}');
+      print('📊 HTTP Response Status: ${response.statusCode}');
+      print('📄 HTTP Response Body: ${response.body}');
 
-      if (response.success && response.data != null) {
-        if (response.data is Map<String, dynamic>) {
-          final Map<String, dynamic> data =
-              response.data! as Map<String, dynamic>;
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
 
-          if (data.containsKey('data')) {
-            final conversation =
-                ChatConversation.fromJson(data['data'] as Map<String, dynamic>);
-            print('✅ Conversation created successfully: ${conversation.id}');
-            return conversation;
-          } else {
-            // If data is not nested, use the response directly
-            final conversation = ChatConversation.fromJson(data);
-            print('✅ Conversation created successfully: ${conversation.id}');
-            return conversation;
-          }
+        if (jsonResponse['success'] == true &&
+            jsonResponse.containsKey('data')) {
+          final conversation = ChatConversation.fromJson(
+              jsonResponse['data'] as Map<String, dynamic>);
+          print('✅ Conversation created successfully: ${conversation.id}');
+          return conversation;
+        } else {
+          throw Exception('API returned success: false');
         }
-        throw Exception('Invalid response format');
       } else {
-        throw Exception('Failed to create conversation: ${response.message}');
+        throw Exception('Request failed with status ${response.statusCode}');
       }
     } catch (e) {
       print('❌ Repository error in createConversation: $e');
@@ -167,64 +162,71 @@ Future<ChatConversation> getConversationById(String conversationId) async {
 
   // Get messages for a conversation - FIXED
   // Get messages for a conversation - FIXED
-Future<List<ChatMessage>> getConversationMessages(
-  String conversationId, {
-  int page = 1,
-  int limit = 50,
-}) async {
-  try {
-    final token = _getAuthToken();
-    if (token == null) {
-      throw Exception('No authentication token found');
-    }
+  Future<List<ChatMessage>> getConversationMessages(
+    String conversationId, {
+    int page = 1,
+    int limit = 50,
+  }) async {
+    try {
+      final token = _getAuthToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
 
-    print('📡 Fetching messages for conversation: $conversationId');
+      print('📡 Fetching messages for conversation: $conversationId');
 
-    // BYPASS THE BROKEN ApiService - use http directly
-    final url = Uri.parse('http://13.61.185.238:5050/api/v1/chats/conversations/$conversationId/messages');
-    final response = await http.get(
-      url,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'accept': 'application/json',
-      },
-    );
+      // BYPASS THE BROKEN ApiService - use http directly
+      final url = Uri.parse(
+          'http://13.61.185.238:5050/api/v1/chats/conversations/$conversationId/messages');
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'accept': 'application/json',
+        },
+      );
 
-    print('📊 HTTP Response Status: ${response.statusCode}');
-    print('📄 HTTP Response Body: ${response.body}');
+      print('📊 HTTP Response Status: ${response.statusCode}');
+      print('📄 HTTP Response Body: ${response.body}');
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
 
-      if (jsonResponse['success'] == true && jsonResponse.containsKey('data') && jsonResponse['data'] is List) {
-        final List<dynamic> messagesData = jsonResponse['data'];
-        final messages = messagesData
-            .map((json) => ChatMessage.fromJson(json as Map<String, dynamic>))
-            .toList();
-        print('✅ Successfully loaded ${messages.length} messages');
-        return messages;
-      } else {
-        // Try alternative format
-        if (jsonResponse.containsKey('messages') && jsonResponse['messages'] is List) {
-          final List<dynamic> messagesData = jsonResponse['messages'];
+        if (jsonResponse['success'] == true &&
+            jsonResponse.containsKey('data') &&
+            jsonResponse['data'] is List) {
+          final List<dynamic> messagesData = jsonResponse['data'];
           final messages = messagesData
               .map((json) => ChatMessage.fromJson(json as Map<String, dynamic>))
               .toList();
-          print('✅ Successfully loaded ${messages.length} messages from messages field');
+          print('✅ Successfully loaded ${messages.length} messages');
           return messages;
+        } else {
+          // Try alternative format
+          if (jsonResponse.containsKey('messages') &&
+              jsonResponse['messages'] is List) {
+            final List<dynamic> messagesData = jsonResponse['messages'];
+            final messages = messagesData
+                .map((json) =>
+                    ChatMessage.fromJson(json as Map<String, dynamic>))
+                .toList();
+            print(
+                '✅ Successfully loaded ${messages.length} messages from messages field');
+            return messages;
+          }
+          print('⚠️ No messages data found in response');
+          return [];
         }
-        print('⚠️ No messages data found in response');
-        return [];
+      } else {
+        throw Exception('Request failed with status ${response.statusCode}');
       }
-    } else {
-      throw Exception('Request failed with status ${response.statusCode}');
+    } catch (e) {
+      print('❌ Repository error in getConversationMessages: $e');
+      rethrow;
     }
-  } catch (e) {
-    print('❌ Repository error in getConversationMessages: $e');
-    rethrow;
   }
-}
 
+  // Send message (old endpoint) - FIXED
   // Send message (old endpoint) - FIXED
   Future<ChatMessage> sendMessage({
     required String conversationId,
@@ -245,30 +247,34 @@ Future<List<ChatMessage>> getConversationMessages(
           'attachments': attachments,
       };
 
-      final response = await _apiService.post<dynamic>(
-        '/api/v1/chats/conversations/$conversationId/messages',
-        body,
+      // BYPASS THE BROKEN ApiService - use http directly
+      final url = Uri.parse(
+          'http://13.61.185.238:5050/api/v1/chats/conversations/$conversationId/messages');
+      final response = await http.post(
+        url,
         headers: {
           'Authorization': 'Bearer $token',
           'accept': 'application/json',
           'Content-Type': 'application/json',
         },
+        body: jsonEncode(body),
       );
 
-      if (response.success && response.data != null) {
-        if (response.data is Map<String, dynamic>) {
-          final Map<String, dynamic> data =
-              response.data! as Map<String, dynamic>;
+      print('📊 HTTP Response Status: ${response.statusCode}');
+      print('📄 HTTP Response Body: ${response.body}');
 
-          if (data.containsKey('data')) {
-            return ChatMessage.fromJson(data['data'] as Map<String, dynamic>);
-          } else {
-            return ChatMessage.fromJson(data);
-          }
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+
+        if (jsonResponse['success'] == true &&
+            jsonResponse.containsKey('data')) {
+          return ChatMessage.fromJson(
+              jsonResponse['data'] as Map<String, dynamic>);
+        } else {
+          throw Exception('API returned success: false');
         }
-        throw Exception('Invalid response format');
       } else {
-        throw Exception('Failed to send message: ${response.message}');
+        throw Exception('Request failed with status ${response.statusCode}');
       }
     } catch (e) {
       print('❌ Repository error in sendMessage: $e');
@@ -276,6 +282,7 @@ Future<List<ChatMessage>> getConversationMessages(
     }
   }
 
+  // Send message to conversation (NEW endpoint) - FIXED
   // Send message to conversation (NEW endpoint) - FIXED
   Future<ChatMessage> sendMessageToConversation(
     SendMessageRequest request,
@@ -289,45 +296,35 @@ Future<List<ChatMessage>> getConversationMessages(
       print('📤 Sending message to conversation: ${request.conversationId}');
       print('📝 Content: ${request.content}');
 
-      final response = await _apiService.post<dynamic>(
-        '/api/v1/chats/messages',
-        request.toJson(),
+      // BYPASS THE BROKEN ApiService - use http directly
+      final url = Uri.parse('http://13.61.185.238:5050/api/v1/chats/messages');
+      final response = await http.post(
+        url,
         headers: {
           'Authorization': 'Bearer $token',
           'accept': 'application/json',
           'Content-Type': 'application/json',
         },
+        body: jsonEncode(request.toJson()),
       );
 
-      print('📊 Send Message Response - Success: ${response.success}');
-      print('📊 Send Message Response - Message: ${response.message}');
-      print('📊 Send Message Response - Data: ${response.data}');
+      print('📊 HTTP Response Status: ${response.statusCode}');
+      print('📄 HTTP Response Body: ${response.body}');
 
-      if (response.success && response.data != null) {
-        if (response.data is Map<String, dynamic>) {
-          final Map<String, dynamic> data =
-              response.data! as Map<String, dynamic>;
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
 
-          if (data.containsKey('data')) {
-            final message =
-                ChatMessage.fromJson(data['data'] as Map<String, dynamic>);
-            print('✅ Message sent successfully: ${message.id}');
-            return message;
-          } else {
-            final message = ChatMessage.fromJson(data);
-            print('✅ Message sent successfully: ${message.id}');
-            return message;
-          }
+        if (jsonResponse['success'] == true &&
+            jsonResponse.containsKey('data')) {
+          final message = ChatMessage.fromJson(
+              jsonResponse['data'] as Map<String, dynamic>);
+          print('✅ Message sent successfully: ${message.id}');
+          return message;
+        } else {
+          throw Exception('API returned success: false');
         }
-        throw Exception('Invalid response format');
       } else {
-        // Handle MongoDB ObjectId error
-        if (response.message.contains('Cast to ObjectId failed')) {
-          throw Exception(
-            'Invalid conversation ID format. Please check the ID and try again.',
-          );
-        }
-        throw Exception('Failed to send message: ${response.message}');
+        throw Exception('Request failed with status ${response.statusCode}');
       }
     } catch (e) {
       print('❌ Repository error in sendMessageToConversation: $e');
@@ -335,6 +332,7 @@ Future<List<ChatMessage>> getConversationMessages(
     }
   }
 
+  // Get all messages in a conversation - FIXED
   // Get all messages in a conversation - FIXED
   Future<List<ChatMessage>> getMessagesByConversationId(
     String conversationId, {
@@ -349,38 +347,37 @@ Future<List<ChatMessage>> getConversationMessages(
 
       print('📡 Fetching messages for conversation: $conversationId');
 
-      final response = await _apiService.get<dynamic>(
-        '/api/v1/chats/conversations/$conversationId/messages',
-        queryParams: {
-          'page': page.toString(),
-          'limit': limit.toString(),
-        },
+      // BYPASS THE BROKEN ApiService - use http directly
+      final url = Uri.parse(
+          'http://13.61.185.238:5050/api/v1/chats/conversations/$conversationId/messages');
+      final response = await http.get(
+        url,
         headers: {
           'Authorization': 'Bearer $token',
           'accept': 'application/json',
         },
       );
 
-      print('📊 Get Messages Response - Success: ${response.success}');
-      print('📊 Get Messages Response - Data: ${response.data}');
+      print('📊 HTTP Response Status: ${response.statusCode}');
+      print('📄 HTTP Response Body: ${response.body}');
 
-      if (response.success && response.data != null) {
-        if (response.data is Map<String, dynamic>) {
-          final Map<String, dynamic> data =
-              response.data! as Map<String, dynamic>;
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
 
-          if (data.containsKey('data') && data['data'] is List) {
-            final List<dynamic> messagesData = data['data'] as List<dynamic>;
-            final messages = messagesData
-                .map((json) =>
-                    ChatMessage.fromJson(json as Map<String, dynamic>))
-                .toList();
-            print(
-                '✅ Successfully loaded ${messages.length} messages from data field');
-            return messages;
-          } else if (data.containsKey('messages') && data['messages'] is List) {
-            final List<dynamic> messagesData =
-                data['messages'] as List<dynamic>;
+        if (jsonResponse['success'] == true &&
+            jsonResponse.containsKey('data') &&
+            jsonResponse['data'] is List) {
+          final List<dynamic> messagesData = jsonResponse['data'];
+          final messages = messagesData
+              .map((json) => ChatMessage.fromJson(json as Map<String, dynamic>))
+              .toList();
+          print('✅ Successfully loaded ${messages.length} messages');
+          return messages;
+        } else {
+          // Try alternative format
+          if (jsonResponse.containsKey('messages') &&
+              jsonResponse['messages'] is List) {
+            final List<dynamic> messagesData = jsonResponse['messages'];
             final messages = messagesData
                 .map((json) =>
                     ChatMessage.fromJson(json as Map<String, dynamic>))
@@ -389,22 +386,11 @@ Future<List<ChatMessage>> getConversationMessages(
                 '✅ Successfully loaded ${messages.length} messages from messages field');
             return messages;
           }
+          print('⚠️ No messages data found in response');
+          return [];
         }
-
-        // If response.data is already a list
-        if (response.data is List) {
-          final List<dynamic> messagesData = response.data as List<dynamic>;
-          final messages = messagesData
-              .map((json) => ChatMessage.fromJson(json as Map<String, dynamic>))
-              .toList();
-          print('✅ Successfully loaded ${messages.length} messages');
-          return messages;
-        }
-
-        print('⚠️ No messages data found in response');
-        return [];
       } else {
-        throw Exception('Failed to load messages: ${response.message}');
+        throw Exception('Request failed with status ${response.statusCode}');
       }
     } catch (e) {
       print('❌ Repository error in getMessagesByConversationId: $e');
@@ -420,21 +406,45 @@ Future<List<ChatMessage>> getConversationMessages(
         throw Exception('No authentication token found');
       }
 
-      final response = await _apiService.put<dynamic>(
-        '/api/v1/chats/messages/$messageId/read',
-        {},
+      // Validate that messageId is a valid ObjectId (24-character hex string)
+      if (!_isValidObjectId(messageId)) {
+        print('❌ Invalid message ID format: $messageId');
+        throw Exception(
+            'Invalid message ID format. Must be a 24-character hex string.');
+      }
+
+      print('📤 Marking message as read: $messageId');
+
+      // BYPASS THE BROKEN ApiService - use http directly
+      // Use POST method as shown in the Swagger documentation
+      final url = Uri.parse(
+          'http://13.61.185.238:5050/api/v1/chats/messages/$messageId/read');
+      final response = await http.post(
+        // Changed from .put to .post
+        url,
         headers: {
           'Authorization': 'Bearer $token',
           'accept': 'application/json',
           'Content-Type': 'application/json',
         },
+        body: jsonEncode({}),
       );
 
-      if (response.success) {
-        print('✅ Message marked as read: $messageId');
-        return true;
+      print('📊 HTTP Response Status: ${response.statusCode}');
+      print('📄 HTTP Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+
+        if (jsonResponse['success'] == true) {
+          print('✅ Message marked as read: $messageId');
+          return true;
+        } else {
+          print('❌ Failed to mark message as read: ${jsonResponse['message']}');
+          return false;
+        }
       } else {
-        print('❌ Failed to mark message as read: ${response.message}');
+        print('❌ Request failed with status ${response.statusCode}');
         return false;
       }
     } catch (e) {
@@ -443,7 +453,7 @@ Future<List<ChatMessage>> getConversationMessages(
     }
   }
 
-  // Delete message - FIXED
+// Delete message - FIXED
   Future<bool> deleteMessage(String messageId) async {
     try {
       final token = _getAuthToken();
@@ -451,24 +461,53 @@ Future<List<ChatMessage>> getConversationMessages(
         throw Exception('No authentication token found');
       }
 
-      final response = await _apiService.delete<dynamic>(
-        '/api/v1/chats/messages/$messageId',
+      // Validate that messageId is a valid ObjectId (24-character hex string)
+      if (!_isValidObjectId(messageId)) {
+        print('❌ Invalid message ID format: $messageId');
+        throw Exception(
+            'Invalid message ID format. Must be a 24-character hex string.');
+      }
+
+      print('🗑️ Deleting message: $messageId');
+
+      // BYPASS THE BROKEN ApiService - use http directly
+      final url = Uri.parse(
+          'http://13.61.185.238:5050/api/v1/chats/messages/$messageId');
+      final response = await http.delete(
+        url,
         headers: {
           'Authorization': 'Bearer $token',
           'accept': 'application/json',
         },
       );
 
-      if (response.success) {
-        print('✅ Message deleted: $messageId');
-        return true;
+      print('📊 HTTP Response Status: ${response.statusCode}');
+      print('📄 HTTP Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+
+        if (jsonResponse['success'] == true) {
+          print('✅ Message deleted: $messageId');
+          return true;
+        } else {
+          print('❌ Failed to delete message: ${jsonResponse['message']}');
+          return false;
+        }
       } else {
-        print('❌ Failed to delete message: ${response.message}');
+        print('❌ Request failed with status ${response.statusCode}');
         return false;
       }
     } catch (e) {
       print('❌ Repository error in deleteMessage: $e');
       return false;
     }
+  }
+
+// Helper method to validate MongoDB ObjectId
+  bool _isValidObjectId(String id) {
+    // MongoDB ObjectId is a 24-character hex string
+    final regex = RegExp(r'^[0-9a-fA-F]{24}$');
+    return regex.hasMatch(id);
   }
 }

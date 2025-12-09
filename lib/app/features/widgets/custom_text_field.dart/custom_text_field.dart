@@ -12,6 +12,7 @@ class CustomTextField extends StatelessWidget {
   final int? maxLength;
   final bool enabled;
   final void Function(String)? onChanged;
+  final TextStyle? style; // ADD THIS
 
   const CustomTextField({
     super.key,
@@ -26,6 +27,7 @@ class CustomTextField extends StatelessWidget {
     this.maxLength,
     this.enabled = true,
     this.onChanged,
+    this.style, // ADD THIS
   });
 
   @override
@@ -38,6 +40,7 @@ class CustomTextField extends StatelessWidget {
       maxLength: maxLength,
       enabled: enabled,
       onChanged: onChanged,
+      style: style, // APPLY THE STYLE HERE
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
@@ -52,6 +55,8 @@ class CustomTextField extends StatelessWidget {
           horizontal: 16,
           vertical: 16,
         ),
+        labelStyle: style?.copyWith(color: Colors.grey), // Optional: style label
+        hintStyle: style?.copyWith(color: Colors.grey), // Optional: style hint
       ),
     );
   }

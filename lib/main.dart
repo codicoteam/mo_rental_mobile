@@ -36,6 +36,23 @@ class MoRentalApp extends StatelessWidget {
       logWriterCallback: (String text, {bool isError = false}) {
         if (isError || Get.isLogEnable) print(text);
       },
+      
+      // REMOVE THIS for now
+      // onInit: () {
+      //   WidgetsBinding.instance.addPostFrameCallback((_) async {
+      //     await Future.delayed(Duration(seconds: 2));
+      //     Get.toNamed(
+      //       AppRoutes.createReservation,
+      //       arguments: {
+      //         'vehicleId': 'test_vehicle_123',
+      //         'vehicleName': 'Toyota Camry 2023',
+      //         'dailyRate': 75.0,
+      //         'startDate': DateTime.now(),
+      //         'endDate': DateTime.now().add(Duration(days: 3)),
+      //       },
+      //     );
+      //   });
+      // },
     );
   }
 }
