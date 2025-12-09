@@ -1,10 +1,9 @@
-import 'dart:math'; // ADD THIS IMPORT
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../../data/models/auth_models/api_response.dart';
+import '../../../data/models/rate_plan/rate_plan_model.dart';
 import '../../../data/models/rate_plan/rate_plan_request.dart';
-import '../../../data/models/rate_plan/rate_plan_response.dart';
 import '../../../data/services/rate_plan_service.dart';
 
 class RatePlanController extends GetxController {
@@ -46,99 +45,132 @@ class RatePlanController extends GetxController {
   void onInit() {
     super.onInit();
     print('📊 RatePlanController initialized');
-    // Load rate plans if user is authenticated
-    if (isAuthenticated) {
-      loadRatePlans();
-    }
+    
+    // Check if user can access rate plans
+    checkUserPermission();
   }
   
   bool get isAuthenticated => _storage.read('auth_token') != null;
   String? get authToken => _storage.read('auth_token');
   
-Future<void> loadRatePlans({int page = 1}) async {
-  if (!isAuthenticated) {
-    errorMessage.value = 'Please login to view rate plans';
-    Get.snackbar(
-      'Authentication Required',
-      'Please login to view rate plans',
-      backgroundColor: Colors.orange,
-      colorText: Colors.white,
-    );
-    return;
+  // Check user role and permissions
+  void checkUserPermission() {
+    final userData = _storage.read('user_data') ?? {};
+    final roles = List<String>.from(userData['roles'] ?? []);
+    final isAdmin = roles.contains('admin') || roles.contains('manager');
+    
+    print('👤 User Role Check:');
+    print('👤 Roles: $roles');
+    print('👤 Is Admin/Manager: $isAdmin');
+    
+    if (!isAdmin && isAuthenticated) {
+      errorMessage.value = 'Rate plans are only accessible to managers and administrators.';
+      Get.snackbar(
+        'Access Restricted',
+        'You need manager/admin privileges to view rate plans.',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        duration: Duration(seconds: 5),
+      );
+    }
   }
   
-  isLoading.value = true;
-  errorMessage.value = '';
-  
-  try {
-    print('\n📊 ========== LOADING RATE PLANS ==========');
-    print('📊 Page: $page');
-    print('🔑 Auth Token Present: ${authToken != null}');
-    if (authToken != null) {
-      // FIX: Use min from dart:math
-      final tokenLength = min(30, authToken!.length);
-      print('🔑 Token (first 30 chars): ${authToken!.substring(0, tokenLength)}...');
+  Future<void> loadRatePlans({int page = 1}) async {
+    if (!isAuthenticated) {
+      errorMessage.value = 'Please login to view rate plans';
+      Get.snackbar(
+        'Authentication Required',
+        'Please login to view rate plans',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
+      return;
     }
     
-    final request = RatePlanRequest(
-      branchId: selectedBranch.value.isNotEmpty ? selectedBranch.value : null,
-      vehicleClass: selectedVehicleClass.value.isNotEmpty ? selectedVehicleClass.value : null,
-      currency: selectedCurrency.value,
-      active: showActiveOnly.value,
-      validOn: selectedDate.value.isNotEmpty ? selectedDate.value : null,
-      page: page,
-      limit: 10,
-    );
+    // Check user role
+    final userData = _storage.read('user_data') ?? {};
+    final roles = List<String>.from(userData['roles'] ?? []);
+    final isAdmin = roles.contains('admin') || roles.contains('manager');
     
-    print('📋 Query Params: ${request.toQueryParams()}');
-    
-    final response = await _ratePlanService.getRatePlans(
-      token: authToken!,
-      request: request,
-    );
-    
-    print('\n📊 ========== RATE PLANS RESPONSE ==========');
-    print('📊 Success: ${response.success}');
-    print('📊 Message: ${response.message}');
-    print('📊 Error: ${response.error}');
-    print('📊 Plans count: ${response.data?.plans.length ?? 0}');
-    print('📊 ======================================\n');
-    
-    if (response.success && response.data != null) {
-      if (page == 1) {
-        ratePlans.value = response.data!.plans;
-      } else {
-        ratePlans.addAll(response.data!.plans);
-      }
-      
-      currentPage.value = response.data!.pagination.page;
-      totalPages.value = response.data!.pagination.totalPages;
-      totalItems.value = response.data!.pagination.total;
-      
+    if (!isAdmin) {
+      errorMessage.value = 'Access denied. Only managers/admins can view rate plans.';
       Get.snackbar(
-        'Success',
-        'Loaded ${response.data!.plans.length} rate plans',
-        backgroundColor: Colors.green,
+        'Access Denied',
+        'Only managers/admins can view rate plans.',
+        backgroundColor: Colors.red,
         colorText: Colors.white,
-        duration: Duration(seconds: 2),
+        duration: Duration(seconds: 5),
       );
-    } else {
-      errorMessage.value = response.message;
+      return;
+    }
+    
+    isLoading.value = true;
+    errorMessage.value = '';
+    
+    try {
+      print('\n📊 ========== LOADING RATE PLANS ==========');
+      print('📊 Page: $page');
+      print('👤 User Role: $roles');
+      print('🔑 Auth Token Present: ${authToken != null}');
       
-      // FIX: Check if response.message is not null before checking contains
-      final message = response.message;
-      if (message.contains('Access denied') ||
-          message.contains('admin') ||
-          message.contains('manager')) {
-        errorMessage.value = 'Access denied. Only managers/admins can view rate plans.';
-        Get.snackbar(
-          'Access Denied',
-          'Only managers/admins can view rate plans.',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          duration: Duration(seconds: 5),
-        );
+      final request = RatePlanRequest(
+        branchId: selectedBranch.value.isNotEmpty ? selectedBranch.value : null,
+        vehicleClass: selectedVehicleClass.value.isNotEmpty ? selectedVehicleClass.value : null,
+        currency: selectedCurrency.value,
+        active: showActiveOnly.value,
+        validOn: selectedDate.value.isNotEmpty ? selectedDate.value : null,
+        page: page,
+        limit: 10,
+      );
+      
+      print('📋 Query Params: ${request.toQueryParams()}');
+      
+      final response = await _ratePlanService.getRatePlans(
+        token: authToken!,
+        request: request,
+      );
+      
+      print('\n📊 ========== RATE PLANS RESPONSE ==========');
+      print('📊 Success: ${response.success}');
+      print('📊 Message: ${response.message}');
+      print('📊 Error: ${response.error}');
+      print('📊 Response Data: ${response.data != null}');
+      
+      if (response.success && response.data != null) {
+        final ratePlanResponse = response.data!;
+        print('📊 Parsed Plans count: ${ratePlanResponse.plans.length}');
+        print('📊 Pagination: page ${ratePlanResponse.pagination.page}, total ${ratePlanResponse.pagination.total}');
+        
+        if (page == 1) {
+          ratePlans.value = ratePlanResponse.plans;
+        } else {
+          ratePlans.addAll(ratePlanResponse.plans);
+        }
+        
+        currentPage.value = ratePlanResponse.pagination.page;
+        totalPages.value = ratePlanResponse.pagination.totalPages;
+        totalItems.value = ratePlanResponse.pagination.total;
+        
+        if (ratePlanResponse.plans.isNotEmpty) {
+          Get.snackbar(
+            'Success',
+            'Loaded ${ratePlanResponse.plans.length} rate plans',
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            duration: Duration(seconds: 2),
+          );
+        }
       } else {
+        errorMessage.value = response.message;
+        
+        // Handle specific error messages
+        final message = response.message;
+        if (message.contains('Access denied') ||
+            message.contains('admin') ||
+            message.contains('manager')) {
+          errorMessage.value = 'Access denied. Only managers/admins can view rate plans.';
+        }
+        
         Get.snackbar(
           'Error',
           response.message,
@@ -146,24 +178,22 @@ Future<void> loadRatePlans({int page = 1}) async {
           colorText: Colors.white,
         );
       }
+    } catch (e) {
+      print('\n🔥 ========== RATE PLANS EXCEPTION ==========');
+      print('🔥 Error: $e');
+      print('🔥 =======================================\n');
+      
+      errorMessage.value = e.toString();
+      Get.snackbar(
+        'Error',
+        'Failed to load rate plans: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
     }
-  } catch (e) {
-    print('\n🔥 ========== RATE PLANS EXCEPTION ==========');
-    print('🔥 Error: $e');
-    print('🔥 StackTrace: ${e.toString()}');
-    print('🔥 =======================================\n');
-    
-    errorMessage.value = e.toString();
-    Get.snackbar(
-      'Error',
-      'Failed to load rate plans: $e',
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
-    );
-  } finally {
-    isLoading.value = false;
   }
-}
   
   Future<void> loadMore() async {
     if (currentPage.value < totalPages.value && !isLoading.value) {
@@ -173,13 +203,6 @@ Future<void> loadRatePlans({int page = 1}) async {
   
   void applyFilters() {
     print('🔍 Applying filters');
-    print('📍 Branch: ${selectedBranch.value}');
-    print('🚗 Class: ${selectedVehicleClass.value}');
-    print('💰 Currency: ${selectedCurrency.value}');
-    print('✅ Active Only: ${showActiveOnly.value}');
-    print('📅 Date: ${selectedDate.value}');
-    
-    // Reset to first page and reload
     currentPage.value = 1;
     loadRatePlans();
   }
@@ -197,8 +220,6 @@ Future<void> loadRatePlans({int page = 1}) async {
   
   void searchPlans(String query) {
     searchQuery.value = query;
-    // In a real app, you might want to debounce this or call API with search
-    // For now, we'll just filter locally
   }
   
   List<RatePlan> get filteredPlans {
@@ -208,12 +229,12 @@ Future<void> loadRatePlans({int page = 1}) async {
     
     return ratePlans.where((plan) {
       return plan.name.toLowerCase().contains(searchQuery.value.toLowerCase()) ||
-             plan.description.toLowerCase().contains(searchQuery.value.toLowerCase()) ||
+             (plan.notes ?? '').toLowerCase().contains(searchQuery.value.toLowerCase()) ||
              plan.vehicleClass.toLowerCase().contains(searchQuery.value.toLowerCase());
     }).toList();
   }
   
-  // CRUD Operations
+  // CRUD Operations - Keep these from the first controller if needed
   Future<ApiResponse<RatePlan>> createPlan(Map<String, dynamic> data) async {
     if (!isAuthenticated) {
       return ApiResponse(

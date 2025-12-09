@@ -7,10 +7,11 @@ import '../../../data/models/chat_models/chat_models.dart';
 class ChatController extends GetxController {
   late ChatRepository _repository;
   late GetStorage _storage;
-  
+
   final RxList<ChatConversation> conversations = <ChatConversation>[].obs;
   final RxList<ChatMessage> messages = <ChatMessage>[].obs;
-  final Rx<ChatConversation?> selectedConversation = Rx<ChatConversation?>(null);
+  final Rx<ChatConversation?> selectedConversation =
+      Rx<ChatConversation?>(null);
   final RxBool isLoading = false.obs;
   final RxBool isLoadingMessages = false.obs;
   final RxBool isSendingMessage = false.obs;
@@ -38,10 +39,10 @@ class ChatController extends GetxController {
     try {
       isLoading.value = true;
       error.value = '';
-      
+
       final conversationList = await _repository.getConversations();
       conversations.value = conversationList;
-      
+
       print('✅ Controller: Loaded ${conversationList.length} conversations');
     } catch (e) {
       error.value = e.toString();
@@ -72,7 +73,8 @@ class ChatController extends GetxController {
   }
 
   // Fetch messages for conversation
-  Future<void> fetchMessages(String conversationId, {bool loadMore = false}) async {
+  Future<void> fetchMessages(String conversationId,
+      {bool loadMore = false}) async {
     try {
       if (!loadMore) {
         isLoadingMessages.value = true;
@@ -84,27 +86,28 @@ class ChatController extends GetxController {
 
       error.value = '';
       currentConversationId.value = conversationId;
-      
+
       final messageList = await _repository.getConversationMessages(
         conversationId,
         page: currentPage.value,
         limit: 20,
       );
-      
+
       if (loadMore) {
         messages.addAll(messageList);
       } else {
         messages.value = messageList;
       }
-      
+
       // Check if there are more messages to load
       hasMoreMessages.value = messageList.length >= 20;
-      
-      print('✅ Controller: Loaded ${messages.length} messages for conversation $conversationId');
+
+      print(
+          '✅ Controller: Loaded ${messages.length} messages for conversation $conversationId');
     } catch (e) {
       error.value = e.toString();
       print('❌ Error fetching messages: $e');
-      
+
       if (!loadMore) {
         messages.clear();
       }
@@ -162,7 +165,7 @@ class ChatController extends GetxController {
 
       isSendingMessage.value = true;
       error.value = '';
-      
+
       final message = await _repository.sendMessage(
         conversationId: selectedConversation.value!.id,
         content: content,
@@ -175,7 +178,8 @@ class ChatController extends GetxController {
 
       // Update conversation's last message preview
       final updatedConversation = selectedConversation.value!.copyWith(
-        lastMessagePreview: content.length > 50 ? '${content.substring(0, 50)}...' : content,
+        lastMessagePreview:
+            content.length > 50 ? '${content.substring(0, 50)}...' : content,
         lastMessageAt: DateTime.now(),
       );
       selectedConversation.value = updatedConversation;
@@ -185,7 +189,7 @@ class ChatController extends GetxController {
     } catch (e) {
       error.value = e.toString();
       print('❌ Error sending message: $e');
-      
+
       // Show error notification
       Get.snackbar(
         'Failed to Send',
@@ -193,7 +197,7 @@ class ChatController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
-      
+
       return null;
     } finally {
       isSendingMessage.value = false;
@@ -209,43 +213,46 @@ class ChatController extends GetxController {
     try {
       isSendingMessage.value = true;
       error.value = '';
-      
+
       final request = SendMessageRequest(
         conversationId: conversationId,
         content: content,
         attachments: attachments,
       );
-      
+
       final message = await _repository.sendMessageToConversation(request);
-      
+
       // If this is the current conversation, add to messages list
       if (selectedConversation.value?.id == conversationId) {
         messages.insert(0, message);
-        
+
         // Update conversation's last message preview
         final updatedConversation = selectedConversation.value?.copyWith(
-          lastMessagePreview: content.length > 50 ? '${content.substring(0, 50)}...' : content,
+          lastMessagePreview:
+              content.length > 50 ? '${content.substring(0, 50)}...' : content,
           lastMessageAt: DateTime.now(),
         );
         selectedConversation.value = updatedConversation;
       }
-      
+
       // Also update the conversation in the conversations list
-      final index = conversations.indexWhere((conv) => conv.id == conversationId);
+      final index =
+          conversations.indexWhere((conv) => conv.id == conversationId);
       if (index != -1) {
         final updatedConv = conversations[index].copyWith(
-          lastMessagePreview: content.length > 50 ? '${content.substring(0, 50)}...' : content,
+          lastMessagePreview:
+              content.length > 50 ? '${content.substring(0, 50)}...' : content,
           lastMessageAt: DateTime.now(),
         );
         conversations[index] = updatedConv;
       }
-      
+
       print('✅ Message sent successfully: ${message.id}');
       return message;
     } catch (e) {
       error.value = e.toString();
       print('❌ Error sending message: $e');
-      
+
       // Show specific error for ObjectId format
       if (e.toString().contains('Invalid conversation ID format')) {
         Get.snackbar(
@@ -262,17 +269,22 @@ class ChatController extends GetxController {
           colorText: Colors.white,
         );
       }
-      
+
       return null;
     } finally {
       isSendingMessage.value = false;
     }
   }
 
-  // Mark message as read
- // Mark message as read
+ // Mark message as read - CORRECTED
 Future<void> markMessageAsRead(String messageId) async {
   try {
+    // Validate that we have a proper message ID (not conversation ID)
+    if (messageId.contains('conv') || !_isValidObjectId(messageId)) {
+      print('⚠️ Invalid message ID format: $messageId');
+      return;
+    }
+    
     await _repository.markMessageAsRead(messageId);
     
     // Update local message state
@@ -300,11 +312,16 @@ Future<void> markMessageAsRead(String messageId) async {
   }
 }
 
+// Helper method to validate MongoDB ObjectId
+bool _isValidObjectId(String id) {
+  final regex = RegExp(r'^[0-9a-fA-F]{24}$');
+  return regex.hasMatch(id);
+}
   // Delete message
   Future<bool> deleteMessage(String messageId) async {
     try {
       final success = await _repository.deleteMessage(messageId);
-      
+
       if (success) {
         // Remove from local list
         messages.removeWhere((msg) => msg.id == messageId);
@@ -315,7 +332,7 @@ Future<void> markMessageAsRead(String messageId) async {
           colorText: Colors.white,
         );
       }
-      
+
       return success;
     } catch (e) {
       print('❌ Error deleting message: $e');
@@ -331,7 +348,9 @@ Future<void> markMessageAsRead(String messageId) async {
 
   // Load more messages
   Future<void> loadMoreMessages() async {
-    if (hasMoreMessages.value && !isLoadingMessages.value && currentConversationId.value.isNotEmpty) {
+    if (hasMoreMessages.value &&
+        !isLoadingMessages.value &&
+        currentConversationId.value.isNotEmpty) {
       await fetchMessages(currentConversationId.value, loadMore: true);
     }
   }
@@ -342,7 +361,10 @@ Future<void> markMessageAsRead(String messageId) async {
 
     return conversations.where((conversation) {
       return conversation.title.toLowerCase().contains(query.toLowerCase()) ||
-          (conversation.lastMessagePreview?.toLowerCase().contains(query.toLowerCase()) ?? false);
+          (conversation.lastMessagePreview
+                  ?.toLowerCase()
+                  .contains(query.toLowerCase()) ??
+              false);
     }).toList();
   }
 

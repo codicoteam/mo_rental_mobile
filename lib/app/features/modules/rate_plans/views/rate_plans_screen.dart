@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../data/models/rate_plan/rate_plan_response.dart';
+import '../../../data/models/rate_plan/rate_plan_model.dart';
+import '../../../widgets/rate_plan_card/rate_plan_card.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/rate_plan_controller.dart';
+
 
 class RatePlansScreen extends StatelessWidget {
   const RatePlansScreen({super.key});
@@ -163,7 +165,7 @@ Widget build(BuildContext context) {
                 ),
               ),
             
-            // Rate Plans List
+            // Rate Plans List - USE IMPORTED WIDGET HERE
             if (controller.filteredPlans.isNotEmpty)
               Expanded(
                 child: RefreshIndicator(
@@ -173,7 +175,7 @@ Widget build(BuildContext context) {
                     itemBuilder: (context, index) {
                       if (index < controller.filteredPlans.length) {
                         final plan = controller.filteredPlans[index];
-                        return RatePlanCard(plan: plan);
+                        return RatePlanCard(plan: plan); // Using imported widget
                       } else {
                         // Load more indicator
                         if (controller.currentPage.value < controller.totalPages.value) {
@@ -239,171 +241,7 @@ Widget build(BuildContext context) {
   }
 }
 
-class RatePlanCard extends StatelessWidget {
-  final RatePlan plan;
-
-  const RatePlanCard({super.key, required this.plan});
-
-  @override
-  Widget build(BuildContext context) {
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    plan.name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: plan.isActive ? Colors.green.shade100 : Colors.red.shade100,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    plan.isActive ? 'ACTIVE' : 'INACTIVE',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: plan.isActive ? Colors.green : Colors.red,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              plan.description,
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 16),
-            
-            // Vehicle Info
-            Row(
-              children: [
-                Icon(Icons.directions_car, size: 16, color: Colors.blue),
-                const SizedBox(width: 8),
-                Text(
-                  plan.vehicleClass.toUpperCase(),
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                ),
-                if (plan.vehicleModelId != null) ...[
-                  const SizedBox(width: 16),
-                  Icon(Icons.model_training, size: 16, color: Colors.blue),
-                  const SizedBox(width: 8),
-                  Text('Model: ${plan.vehicleModelId}'),
-                ],
-              ],
-            ),
-            const SizedBox(height: 8),
-            
-            // Rates
-            const Text(
-              'Rates:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildRateChip('Daily', plan.formattedDailyRate),
-                _buildRateChip('Weekly', plan.formattedWeeklyRate),
-                _buildRateChip('Monthly', plan.formattedMonthlyRate),
-              ],
-            ),
-            const SizedBox(height: 16),
-            
-            // Rental Period
-            Row(
-              children: [
-                Icon(Icons.calendar_today, size: 16, color: Colors.green),
-                const SizedBox(width: 8),
-                Text('Rental: ${plan.minRentalDays}-${plan.maxRentalDays} days'),
-                const Spacer(),
-                Icon(Icons.date_range, size: 16, color: Colors.orange),
-                const SizedBox(width: 8),
-                Text(plan.validityPeriod),
-              ],
-            ),
-            
-            // Actions
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, size: 20),
-                  onPressed: () => Get.to(() => AddEditRatePlanScreen(plan: plan)),
-                  tooltip: 'Edit',
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, size: 20, color: Colors.red),
-                  onPressed: () {
-                    Get.defaultDialog(
-                      title: 'Delete Rate Plan',
-                      middleText: 'Are you sure you want to delete ${plan.name}?',
-                      textConfirm: 'Delete',
-                      textCancel: 'Cancel',
-                      confirmTextColor: Colors.white,
-                      onConfirm: () async {
-                        Get.back();
-                        await Get.find<RatePlanController>().deletePlan(plan.id);
-                      },
-                    );
-                  },
-                  tooltip: 'Delete',
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRateChip(String period, String rate) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            period,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.blue,
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          rate,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-}
+// REMOVE the old RatePlanCard class from this file since we imported it
 
 class FilterBottomSheet extends StatelessWidget {
   const FilterBottomSheet({super.key});
@@ -516,7 +354,7 @@ class AddEditRatePlanScreen extends StatelessWidget {
     final controller = Get.find<RatePlanController>();
     
     final nameController = TextEditingController(text: plan?.name ?? '');
-    final descController = TextEditingController(text: plan?.description ?? '');
+    final notesController = TextEditingController(text: plan?.notes ?? '');
     final dailyRateController = TextEditingController(
       text: plan?.dailyRate.toString() ?? '0.0'
     );
@@ -526,11 +364,20 @@ class AddEditRatePlanScreen extends StatelessWidget {
     final monthlyRateController = TextEditingController(
       text: plan?.monthlyRate.toString() ?? '0.0'
     );
-    final minDaysController = TextEditingController(
-      text: plan?.minRentalDays.toString() ?? '1'
+    final weekendRateController = TextEditingController(
+      text: plan?.weekendRate.toString() ?? '0.0'
     );
-    final maxDaysController = TextEditingController(
-      text: plan?.maxRentalDays.toString() ?? '30'
+    
+    // For validity dates
+    final validFromController = TextEditingController(
+      text: plan?.validFrom != null 
+          ? '${plan!.validFrom.year}-${plan!.validFrom.month.toString().padLeft(2, '0')}-${plan!.validFrom.day.toString().padLeft(2, '0')}'
+          : DateTime.now().toString().split(' ')[0]
+    );
+    final validToController = TextEditingController(
+      text: plan?.validTo != null 
+          ? '${plan!.validTo.year}-${plan!.validTo.month.toString().padLeft(2, '0')}-${plan!.validTo.day.toString().padLeft(2, '0')}'
+          : DateTime.now().add(const Duration(days: 365)).toString().split(' ')[0]
     );
 
     return Scaffold(
@@ -546,119 +393,203 @@ class AddEditRatePlanScreen extends StatelessWidget {
             TextFormField(
               controller: nameController,
               decoration: const InputDecoration(
-                labelText: 'Plan Name',
+                labelText: 'Plan Name*',
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
+            
             TextFormField(
-              controller: descController,
+              controller: notesController,
               maxLines: 3,
               decoration: const InputDecoration(
-                labelText: 'Description',
+                labelText: 'Notes/Description',
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 20),
             
-            const Text('Vehicle Class', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Vehicle Class*', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-           Obx(() => Wrap(
-  spacing: 8,
-  children: controller.vehicleClasses.map((cls) {
-    return ChoiceChip(
-      label: Text(cls.toUpperCase()),
-      selected: controller.selectedVehicleClass.value == cls,
-      onSelected: (selected) {
-        controller.selectedVehicleClass.value = selected ? cls : '';
-      },
-    );
-  }).toList(),
-)),
+            Obx(() => Wrap(
+              spacing: 8,
+              children: controller.vehicleClasses.map((cls) {
+                return ChoiceChip(
+                  label: Text(cls.toUpperCase()),
+                  selected: controller.selectedVehicleClass.value == cls,
+                  onSelected: (selected) {
+                    controller.selectedVehicleClass.value = selected ? cls : '';
+                  },
+                );
+              }).toList(),
+            )),
             
             const SizedBox(height: 20),
-            const Text('Rates', style: TextStyle(fontWeight: FontWeight.bold)),
+            
+            const Text('Currency*', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Obx(() => Wrap(
+              spacing: 8,
+              children: controller.currencies.map((curr) {
+                return ChoiceChip(
+                  label: Text(curr),
+                  selected: controller.selectedCurrency.value == curr,
+                  onSelected: (selected) {
+                    controller.selectedCurrency.value = selected ? curr : 'USD';
+                  },
+                );
+              }).toList(),
+            )),
+            
+            const SizedBox(height: 20),
+            const Text('Rates*', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             
+            // Daily Rate
+            TextFormField(
+              controller: dailyRateController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Daily Rate',
+                border: OutlineInputBorder(),
+                prefixText: '\$ ',
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Weekly Rate
+            TextFormField(
+              controller: weeklyRateController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Weekly Rate',
+                border: OutlineInputBorder(),
+                prefixText: '\$ ',
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Monthly Rate
+            TextFormField(
+              controller: monthlyRateController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Monthly Rate',
+                border: OutlineInputBorder(),
+                prefixText: '\$ ',
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Weekend Rate
+            TextFormField(
+              controller: weekendRateController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Weekend Rate',
+                border: OutlineInputBorder(),
+                prefixText: '\$ ',
+              ),
+            ),
+            
+            const SizedBox(height: 20),
+            const Text('Validity Period*', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
-                    controller: dailyRateController,
-                    keyboardType: TextInputType.number,
+                    controller: validFromController,
                     decoration: const InputDecoration(
-                      labelText: 'Daily Rate',
+                      labelText: 'Valid From (YYYY-MM-DD)',
                       border: OutlineInputBorder(),
+                      suffixIcon: Icon(Icons.calendar_today),
                     ),
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+                      if (date != null) {
+                        validFromController.text = 
+                          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                      }
+                    },
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: TextFormField(
-                    controller: weeklyRateController,
-                    keyboardType: TextInputType.number,
+                    controller: validToController,
                     decoration: const InputDecoration(
-                      labelText: 'Weekly Rate',
+                      labelText: 'Valid To (YYYY-MM-DD)',
                       border: OutlineInputBorder(),
+                      suffixIcon: Icon(Icons.calendar_today),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: monthlyRateController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Monthly Rate',
-                      border: OutlineInputBorder(),
-                    ),
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now().add(const Duration(days: 365)),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2100),
+                      );
+                      if (date != null) {
+                        validToController.text = 
+                          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                      }
+                    },
                   ),
                 ),
               ],
             ),
             
             const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: minDaysController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Min Days',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: maxDaysController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Max Days',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            
+            Obx(() => SwitchListTile(
+              title: const Text('Active Plan'),
+              value: controller.showActiveOnly.value,
+              onChanged: (value) => controller.showActiveOnly.value = value,
+            )),
             
             const SizedBox(height: 30),
+            
             ElevatedButton(
               onPressed: () async {
+                // Validate required fields
+                if (nameController.text.isEmpty) {
+                  Get.snackbar('Error', 'Plan name is required', backgroundColor: Colors.red);
+                  return;
+                }
+                
+                if (controller.selectedVehicleClass.value.isEmpty) {
+                  Get.snackbar('Error', 'Vehicle class is required', backgroundColor: Colors.red);
+                  return;
+                }
+                
+                // Create data object matching your API
                 final data = {
                   'name': nameController.text,
-                  'description': descController.text,
-                  'daily_rate': double.parse(dailyRateController.text),
-                  'weekly_rate': double.parse(weeklyRateController.text),
-                  'monthly_rate': double.parse(monthlyRateController.text),
-                  'min_rental_days': int.parse(minDaysController.text),
-                  'max_rental_days': int.parse(maxDaysController.text),
-                  'currency': controller.selectedCurrency.value,
+                  'notes': notesController.text,
                   'vehicle_class': controller.selectedVehicleClass.value,
-                  'is_active': true,
+                  'currency': controller.selectedCurrency.value,
+                  'daily_rate': double.parse(dailyRateController.text.isEmpty ? '0' : dailyRateController.text),
+                  'weekly_rate': double.parse(weeklyRateController.text.isEmpty ? '0' : weeklyRateController.text),
+                  'monthly_rate': double.parse(monthlyRateController.text.isEmpty ? '0' : monthlyRateController.text),
+                  'weekend_rate': double.parse(weekendRateController.text.isEmpty ? '0' : weekendRateController.text),
+                  'valid_from': validFromController.text,
+                  'valid_to': validToController.text,
+                  'active': controller.showActiveOnly.value,
                 };
+                
+                // Optional: Add branch_id if you have branch selection
+                if (controller.selectedBranch.value.isNotEmpty) {
+                  data['branch_id'] = controller.selectedBranch.value;
+                }
+                
+                print('📦 Rate Plan Data: $data');
                 
                 if (isEdit) {
                   await controller.updatePlan(plan!.id, data);
@@ -670,6 +601,8 @@ class AddEditRatePlanScreen extends StatelessWidget {
               },
               child: Text(isEdit ? 'Update Plan' : 'Create Plan'),
             ),
+            
+            const SizedBox(height: 20),
           ],
         ),
       ),

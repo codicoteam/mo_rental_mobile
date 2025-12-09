@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../../core/themes/app_palette.dart';
 import '../../../../../routes/app_routes.dart';
-
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -17,25 +15,20 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
 
-    Timer(const Duration(seconds: 2), () {
+    Timer(const Duration(seconds: 30), () { // Changed from 30 to 3 seconds
       // Navigate to onboarding screen and remove splash from stack
       Get.offNamed(AppRoutes.onboarding);
     });
   }
-
-  @override
+@override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppPalette.primaryBlue,
-      body: Center(
-        child: Text(
-          "MO_RENTAL",
-          style: TextStyle(
-            color: AppPalette.pureWhite,
-            fontSize: 36,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.5,
-          ),
+      body: SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: Image.asset(
+          'assets/images/onboarding.jpeg',
+          fit: BoxFit.cover, // This makes image cover entire screen
         ),
       ),
     );

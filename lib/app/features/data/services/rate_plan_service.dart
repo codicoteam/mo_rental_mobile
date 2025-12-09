@@ -2,6 +2,7 @@ import 'dart:convert'; // ADD THIS
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http; // ADD THIS
 import '../models/auth_models/api_response.dart';
+import '../models/rate_plan/rate_plan_model.dart';
 import '../models/rate_plan/rate_plan_request.dart';
 import '../models/rate_plan/rate_plan_response.dart';
 import 'api_service.dart';
@@ -9,10 +10,10 @@ import 'api_service.dart';
 class RatePlanService extends GetxService {
   final ApiService _apiService = Get.find<ApiService>();
 
-  Future<ApiResponse<RatePlanResponse>> getRatePlans({
-    required String token,
-    RatePlanRequest? request,
-  }) async {
+ Future<ApiResponse<RatePlanResponse>> getRatePlans({
+  required String token,
+  RatePlanRequest? request,
+}) async {
     print('📊 RATE PLANS REQUEST');
     print('🔑 Token: ${token.substring(0, 20)}...');
     print('📋 Query Params: ${request?.toQueryParams()}');

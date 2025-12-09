@@ -507,7 +507,7 @@ flutter pub cache repair
 
 ping pub.dev
 
-
+ravemicroanimation in flutter
 curl https://pub.dev/api/packages/get
 
 ipanoshichirume2791@gmail.com
@@ -576,3 +576,56 @@ GIVE NECCESSARY INFOR NOT WAFFLE OR REPEAT
 FOLDERS WHICH YOU ALREADY GAVE
 
 
+
+MODIFY THE FOLLOWING SCREENS WITHOUT CHANGING ITS C
+ORE FUNCTIONS ,MAKE IT LOOK MORE
+ FUTURISTIV, VISUALLY APPEAKLING ,MODERN AND STARNDARD
+
+
+Enhance the following Flutter screen ONLY in terms of UI and UX, without changing any core functionality, logic, variables, routing, controllers, GetX, state, or behavior.
+Make the UI visually appealing, modern, high quality, and consistent with a production-level app.
+DO NOT modify any logic — only improve the layout, spacing, design, animations, and style.
+
+Use the following design rules:
+
+Background color: pure white (#FFFFFF) unless I specify otherwise
+
+Only use colors from my palette:
+
+primaryBlue #047BC1
+
+indigo #4F46E5
+
+deepIndigo #3730A3
+
+pureWhite
+
+soft greys
+
+gradients using the palette
+
+Use glassmorphism elements when appropriate
+
+Use modern card elevation, blur effects, soft shadows
+
+Increase spacing, padding, and alignment for better clarity
+
+Make the design futuristic and elegant
+
+Make the entire screen scrollable (NO fixed header unless I explicitly request)
+
+Maintain responsiveness and avoid overflow
+
+Keep widget names, functions, controllers, bindings, etc EXACTLY the same
+
+DO NOT remove or rename any fields, GetX calls, onTap, onChanged, validators, or logic
+
+Output Requirements:
+
+Return a clean rewritten version of my screen code
+
+Keep the functional code exactly the same
+
+Only modify UI components, styling, and widget tree arrangement
+
+Do not add or remove any business logic
