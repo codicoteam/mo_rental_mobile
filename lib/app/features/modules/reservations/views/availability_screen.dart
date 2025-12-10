@@ -22,10 +22,10 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize controller safely
     _initializeController();
-    
+
     // Initialize with default dates
     _pickedStartDate = DateTime.now();
     _pickedEndDate = DateTime.now().add(const Duration(days: 1));
@@ -42,13 +42,12 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
         Get.lazyPut(() => ReservationController(), fenix: true);
         print('🛠️ Manually initialized ReservationController');
       }
-      
+
       _controller = Get.find<ReservationController>();
-      
+
       // Set initial dates if controller has them
       _pickedStartDate = _controller.selectedStartDate.value;
       _pickedEndDate = _controller.selectedEndDate.value;
-          
     } catch (e) {
       print('❌ Error initializing controller: $e');
       // Create a fallback controller
@@ -70,7 +69,7 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    
+
     if (picked != null) {
       setState(() {
         _pickedStartDate = picked;
@@ -82,11 +81,12 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
   Future<void> _selectEndDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _pickedEndDate ?? DateTime.now().add(const Duration(days: 1)),
+      initialDate:
+          _pickedEndDate ?? DateTime.now().add(const Duration(days: 1)),
       firstDate: _pickedStartDate ?? DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    
+
     if (picked != null) {
       setState(() {
         _pickedEndDate = picked;
@@ -95,61 +95,61 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
     }
   }
 
- void _checkAvailability() {
-  if (_pickedStartDate == null || _pickedEndDate == null) {
-    Get.snackbar(
-      'Missing Dates',
-      'Please select both start and end dates',
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
+  void _checkAvailability() {
+    if (_pickedStartDate == null || _pickedEndDate == null) {
+      Get.snackbar(
+        'Missing Dates',
+        'Please select both start and end dates',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    if (_pickedEndDate!.isBefore(_pickedStartDate!)) {
+      Get.snackbar(
+        'Invalid Dates',
+        'End date must be after start date',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    if (_pickedStartDate!.isBefore(DateTime.now())) {
+      Get.snackbar(
+        'Invalid Dates',
+        'Start date cannot be in the past',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    // FIX: Normalize dates to remove time component
+    final normalizedStartDate = DateTime(
+      _pickedStartDate!.year,
+      _pickedStartDate!.month,
+      _pickedStartDate!.day,
     );
-    return;
-  }
 
-  if (_pickedEndDate!.isBefore(_pickedStartDate!)) {
-    Get.snackbar(
-      'Invalid Dates',
-      'End date must be after start date',
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
+    final normalizedEndDate = DateTime(
+      _pickedEndDate!.year,
+      _pickedEndDate!.month,
+      _pickedEndDate!.day,
     );
-    return;
-  }
 
-  if (_pickedStartDate!.isBefore(DateTime.now())) {
-    Get.snackbar(
-      'Invalid Dates',
-      'Start date cannot be in the past',
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
+    print('📅 Normalized Start Date: $normalizedStartDate');
+    print('📅 Normalized End Date: $normalizedEndDate');
+
+    _controller.checkAvailability(
+      vehicleId: _vehicleIdController.text.trim().isEmpty
+          ? null
+          : _vehicleIdController.text.trim(),
+      startDate: normalizedStartDate,
+      endDate: normalizedEndDate,
     );
-    return;
   }
-
-  // FIX: Normalize dates to remove time component
-  final normalizedStartDate = DateTime(
-    _pickedStartDate!.year,
-    _pickedStartDate!.month,
-    _pickedStartDate!.day,
-  );
-  
-  final normalizedEndDate = DateTime(
-    _pickedEndDate!.year,
-    _pickedEndDate!.month,
-    _pickedEndDate!.day,
-  );
-
-  print('📅 Normalized Start Date: $normalizedStartDate');
-  print('📅 Normalized End Date: $normalizedEndDate');
-
-  _controller.checkAvailability(
-    vehicleId: _vehicleIdController.text.trim().isEmpty 
-        ? null 
-        : _vehicleIdController.text.trim(),
-    startDate: normalizedStartDate,
-    endDate: normalizedEndDate,
-  );
-}
 
   @override
   Widget build(BuildContext context) {
@@ -219,18 +219,20 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Start Date
                     Row(
                       children: [
                         const Icon(Icons.calendar_today, size: 20),
                         const SizedBox(width: 8),
-                        const Text('Start Date:', style: TextStyle(fontWeight: FontWeight.w500)),
+                        const Text('Start Date:',
+                            style: TextStyle(fontWeight: FontWeight.w500)),
                         const Spacer(),
                         TextButton(
                           onPressed: () => _selectStartDate(context),
                           child: Text(
-                            DateFormat('MMM dd, yyyy').format(_pickedStartDate!),
+                            DateFormat('MMM dd, yyyy')
+                                .format(_pickedStartDate!),
                             style: const TextStyle(fontSize: 16),
                           ),
                         ),
@@ -244,7 +246,8 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
                       children: [
                         const Icon(Icons.calendar_today, size: 20),
                         const SizedBox(width: 8),
-                        const Text('End Date:', style: TextStyle(fontWeight: FontWeight.w500)),
+                        const Text('End Date:',
+                            style: TextStyle(fontWeight: FontWeight.w500)),
                         const Spacer(),
                         TextButton(
                           onPressed: () => _selectEndDate(context),
@@ -260,7 +263,8 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
 
                     // Duration
                     Builder(builder: (context) {
-                      final duration = _pickedEndDate!.difference(_pickedStartDate!).inDays;
+                      final duration =
+                          _pickedEndDate!.difference(_pickedStartDate!).inDays;
                       return Row(
                         children: [
                           const Icon(Icons.access_time, size: 20),
@@ -348,7 +352,9 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
                       Row(
                         children: [
                           Icon(
-                            result.available ? Icons.check_circle : Icons.cancel,
+                            result.available
+                                ? Icons.check_circle
+                                : Icons.cancel,
                             color: result.available ? Colors.green : Colors.red,
                             size: 24,
                           ),
@@ -358,7 +364,8 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
-                              color: result.available ? Colors.green : Colors.red,
+                              color:
+                                  result.available ? Colors.green : Colors.red,
                             ),
                           ),
                         ],
@@ -380,13 +387,15 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
                       ],
 
                       // Conflicts
-                      if (result.conflicts != null && result.conflicts!.isNotEmpty) ...[
+                      if (result.conflicts != null &&
+                          result.conflicts!.isNotEmpty) ...[
                         const Text(
                           'Conflicts:',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
-                        ...result.conflicts!.map((conflict) => _buildConflictCard(conflict)),
+                        ...result.conflicts!
+                            .map((conflict) => _buildConflictCard(conflict)),
                       ],
 
                       // Estimated Cost
@@ -396,6 +405,7 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
                       const SizedBox(height: 16),
 
                       // Action Buttons - CORRECTED VERSION
+                      // In the _buildVehicleInfo method or wherever your Book Now button is:
                       if (result.available && result.vehicle != null)
                         Row(
                           children: [
@@ -403,22 +413,25 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
                               child: ElevatedButton.icon(
                                 onPressed: () {
                                   // Navigate to CreateReservationScreen with parameters
-                                 Get.toNamed(
-  AppRoutes.createReservation,
-  arguments: { // Use arguments, NOT parameters
-    'vehicleId': result.vehicle!.id,
-    'vehicleName': result.vehicle!.displayName,
-    'dailyRate': result.vehicle!.dailyRate,
-    'startDate': _pickedStartDate!,
-    'endDate': _pickedEndDate!,
-  },
-);
+                                  Get.toNamed(
+                                    AppRoutes.createReservation,
+                                    arguments: {
+                                      // Use arguments, NOT parameters
+                                      'vehicleId': result.vehicle!.id,
+                                      'vehicleName':
+                                          result.vehicle!.displayName,
+                                      'dailyRate': result.vehicle!.dailyRate,
+                                      'startDate': _pickedStartDate!,
+                                      'endDate': _pickedEndDate!,
+                                    },
+                                  );
                                 },
                                 icon: const Icon(Icons.book_online),
                                 label: const Text('Book Now'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.green,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
                                 ),
                               ),
                             ),
@@ -500,7 +513,8 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
                 Expanded(
                   child: Text(
                     vehicle.displayName,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                 ),
               ],
@@ -546,7 +560,8 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
           children: [
             const Text(
               'Reservation Conflict',
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+              style:
+                  TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
             ),
             const SizedBox(height: 4),
             Text('From: ${DateFormat('MMM dd, yyyy').format(conflict.start)}'),
@@ -561,7 +576,7 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
   Widget _buildEstimatedCost(VehicleInfo vehicle) {
     final duration = _pickedEndDate!.difference(_pickedStartDate!).inDays;
     final cost = duration * vehicle.dailyRate;
-    
+
     return Card(
       color: Colors.blue.shade50,
       child: Padding(

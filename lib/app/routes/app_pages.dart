@@ -28,6 +28,7 @@ import '../features/modules/reservations/views/create_reservation_screen.dart';
 import '../features/modules/vehicles/controllers/vehicle_controller.dart';
 import '../features/modules/vehicles/controllers/vehicle_model_controller.dart';
 import '../features/modules/vehicles/views/vehicle_models_screen.dart';
+import '../features/modules/vehicles/views/vehicle_selection_screen.dart';
 import '../features/modules/vehicles/views/vehicles_screen.dart';
 import '../features/modules/welcome_screens/onboarding_screens/views/onboarding_screen.dart';
 import '../features/modules/welcome_screens/splash_screen/views/splash_screen.dart';
@@ -111,45 +112,14 @@ class AppPages {
         return BranchDetailScreen(branch: branch);
       },
     ),
+    // In AppPages
+// In AppPages - UPDATE THIS SECTION
+    // In app_pages.dart, update the CreateReservationScreen route:
     GetPage(
       name: AppRoutes.createReservation,
       page: () {
-        // Use Get.arguments instead of Get.parameters
-        final args = Get.arguments as Map<String, dynamic>? ?? {};
-
-        print('📱 CreateReservationScreen arguments: $args');
-
-        try {
-          return CreateReservationScreen(
-            vehicleId: args['vehicleId']?.toString() ?? 'test_default_id',
-            vehicleName: args['vehicleName']?.toString() ?? 'Test Vehicle',
-            dailyRate: (args['dailyRate'] is double)
-                ? args['dailyRate']
-                : double.tryParse(args['dailyRate']?.toString() ?? '0') ?? 0.0,
-            startDate: args['startDate'] is DateTime
-                ? args['startDate']
-                : DateTime.tryParse(args['startDate']?.toString() ??
-                        DateTime.now().toIso8601String()) ??
-                    DateTime.now(),
-            endDate: args['endDate'] is DateTime
-                ? args['endDate']
-                : DateTime.tryParse(args['endDate']?.toString() ??
-                        DateTime.now()
-                            .add(Duration(days: 1))
-                            .toIso8601String()) ??
-                    DateTime.now().add(Duration(days: 1)),
-          );
-        } catch (e) {
-          print('❌ Error parsing arguments: $e');
-          // Fallback
-          return CreateReservationScreen(
-            vehicleId: 'fallback_id',
-            vehicleName: 'Fallback Vehicle',
-            dailyRate: 50.0,
-            startDate: DateTime.now(),
-            endDate: DateTime.now().add(Duration(days: 2)),
-          );
-        }
+        final args = Get.arguments as Map<String, dynamic>?;
+        return CreateReservationScreen(initialData: args);
       },
       binding: ReservationBinding(),
     ),
@@ -176,6 +146,14 @@ class AppPages {
           () => VehicleController(Get.find<VehicleRepository>()),
         );
       }),
+    ),
+
+    // In app_pages.dart, add:
+    GetPage(
+      name: AppRoutes.vehicleSelection,
+      page: () => VehicleSelectionScreen(
+        isSelectionMode: Get.arguments?['isSelectionMode'] ?? true,
+      ),
     ),
 
     // Public Drivers Screen

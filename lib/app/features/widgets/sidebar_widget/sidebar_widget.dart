@@ -17,7 +17,8 @@ class SidebarWidget extends StatefulWidget {
   State<SidebarWidget> createState() => _SidebarWidgetState();
 }
 
-class _SidebarWidgetState extends State<SidebarWidget> with SingleTickerProviderStateMixin {
+class _SidebarWidgetState extends State<SidebarWidget>
+    with SingleTickerProviderStateMixin {
   final GetStorage storage = GetStorage();
   bool _isSidebarOpen = false;
   int _selectedIndex = 0;
@@ -154,9 +155,9 @@ class _SidebarWidgetState extends State<SidebarWidget> with SingleTickerProvider
     });
 
     final item = _sidebarItems[index];
-    
+
     _toggleSidebar();
-    
+
     Future.delayed(const Duration(milliseconds: 200), () {
       _handleNavigation(item);
     });
@@ -193,13 +194,6 @@ class _SidebarWidgetState extends State<SidebarWidget> with SingleTickerProvider
         case '/reservations/create':
           Get.toNamed(
             AppRoutes.createReservation,
-            arguments: {
-              'vehicleId': 'test_vehicle_123',
-              'vehicleName': 'Toyota Camry 2023',
-              'dailyRate': 75.0,
-              'startDate': DateTime.now(),
-              'endDate': DateTime.now().add(const Duration(days: 3)),
-            },
           );
           break;
         case '/branches':
@@ -246,7 +240,7 @@ class _SidebarWidgetState extends State<SidebarWidget> with SingleTickerProvider
     final userData = storage.read('user_data') ?? {};
     final userName = userData['full_name'] ?? 'Guest';
     final userEmail = userData['email'] ?? 'guest@example.com';
-    
+
     // Get colors from theme
     final colorScheme = Theme.of(context).colorScheme;
     final primaryColor = colorScheme.primary;
@@ -264,7 +258,7 @@ class _SidebarWidgetState extends State<SidebarWidget> with SingleTickerProvider
               child: widget.child,
             ),
           ),
-          
+
           // Overlay when sidebar is open
           if (_isSidebarOpen)
             GestureDetector(
@@ -278,7 +272,7 @@ class _SidebarWidgetState extends State<SidebarWidget> with SingleTickerProvider
                 },
               ),
             ),
-          
+
           // Sidebar - Everything scrollable
           AnimatedBuilder(
             animation: _animation,
@@ -333,7 +327,8 @@ class _SidebarWidgetState extends State<SidebarWidget> with SingleTickerProvider
                                           shape: BoxShape.circle,
                                           boxShadow: [
                                             BoxShadow(
-                                              color: primaryColor.withOpacity(0.3),
+                                              color:
+                                                  primaryColor.withOpacity(0.3),
                                               blurRadius: 10,
                                               spreadRadius: 2,
                                             ),
@@ -341,7 +336,8 @@ class _SidebarWidgetState extends State<SidebarWidget> with SingleTickerProvider
                                         ),
                                         child: CircleAvatar(
                                           radius: 38,
-                                          backgroundColor: Colors.white.withOpacity(0.9),
+                                          backgroundColor:
+                                              Colors.white.withOpacity(0.9),
                                           child: CircleAvatar(
                                             radius: 35,
                                             backgroundColor: Colors.white,
@@ -385,9 +381,11 @@ class _SidebarWidgetState extends State<SidebarWidget> with SingleTickerProvider
                                         ),
                                         decoration: BoxDecoration(
                                           color: Colors.white.withOpacity(0.2),
-                                          borderRadius: BorderRadius.circular(20),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
                                           border: Border.all(
-                                            color: Colors.white.withOpacity(0.3),
+                                            color:
+                                                Colors.white.withOpacity(0.3),
                                             width: 1,
                                           ),
                                         ),
@@ -434,34 +432,45 @@ class _SidebarWidgetState extends State<SidebarWidget> with SingleTickerProvider
                                         color: Colors.transparent,
                                         child: InkWell(
                                           onTap: () => _navigateTo(index),
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                           child: Container(
                                             decoration: BoxDecoration(
                                               color: isSelected
-                                                  ? primaryColor.withOpacity(0.15)
+                                                  ? primaryColor
+                                                      .withOpacity(0.15)
                                                   : Colors.transparent,
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
                                             child: Padding(
-                                              padding: const EdgeInsets.symmetric(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
                                                 horizontal: 16,
                                                 vertical: 14,
                                               ),
                                               child: Row(
                                                 children: [
                                                   Container(
-                                                    padding: const EdgeInsets.all(8),
+                                                    padding:
+                                                        const EdgeInsets.all(8),
                                                     decoration: BoxDecoration(
-                                                      color: isSelected 
-                                                          ? primaryColor.withOpacity(0.2)
-                                                          : onSurfaceColor.withOpacity(0.05),
-                                                      borderRadius: BorderRadius.circular(10),
+                                                      color: isSelected
+                                                          ? primaryColor
+                                                              .withOpacity(0.2)
+                                                          : onSurfaceColor
+                                                              .withOpacity(
+                                                                  0.05),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              10),
                                                     ),
                                                     child: Icon(
                                                       item.icon,
                                                       color: isSelected
                                                           ? primaryColor
-                                                          : onSurfaceColor.withOpacity(0.7),
+                                                          : onSurfaceColor
+                                                              .withOpacity(0.7),
                                                       size: 22,
                                                     ),
                                                   ),
@@ -476,26 +485,34 @@ class _SidebarWidgetState extends State<SidebarWidget> with SingleTickerProvider
                                                             : FontWeight.w400,
                                                         color: isSelected
                                                             ? primaryColor
-                                                            : onSurfaceColor.withOpacity(0.8),
+                                                            : onSurfaceColor
+                                                                .withOpacity(
+                                                                    0.8),
                                                       ),
                                                     ),
                                                   ),
-                                                  if (item.badgeCount != null && item.badgeCount! > 0)
+                                                  if (item.badgeCount != null &&
+                                                      item.badgeCount! > 0)
                                                     Container(
-                                                      padding: const EdgeInsets.symmetric(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
                                                         horizontal: 10,
                                                         vertical: 5,
                                                       ),
                                                       decoration: BoxDecoration(
                                                         color: primaryColor,
-                                                        borderRadius: BorderRadius.circular(10),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(10),
                                                       ),
                                                       child: Text(
-                                                        item.badgeCount.toString(),
+                                                        item.badgeCount
+                                                            .toString(),
                                                         style: const TextStyle(
                                                           color: Colors.white,
                                                           fontSize: 11,
-                                                          fontWeight: FontWeight.bold,
+                                                          fontWeight:
+                                                              FontWeight.bold,
                                                         ),
                                                       ),
                                                     ),
@@ -531,9 +548,11 @@ class _SidebarWidgetState extends State<SidebarWidget> with SingleTickerProvider
                                         },
                                         borderRadius: BorderRadius.circular(12),
                                         child: Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 16),
                                           child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
                                               Icon(
                                                 Icons.logout_rounded,
@@ -568,7 +587,7 @@ class _SidebarWidgetState extends State<SidebarWidget> with SingleTickerProvider
               );
             },
           ),
-          
+
           // Menu Button
           Positioned(
             top: MediaQuery.of(context).padding.top + 10,
@@ -596,7 +615,9 @@ class _SidebarWidgetState extends State<SidebarWidget> with SingleTickerProvider
                       turns: _isSidebarOpen ? 0.5 : 0,
                       duration: const Duration(milliseconds: 300),
                       child: Icon(
-                        _isSidebarOpen ? Icons.close_rounded : Icons.menu_rounded,
+                        _isSidebarOpen
+                            ? Icons.close_rounded
+                            : Icons.menu_rounded,
                         size: 24,
                         color: Colors.white,
                       ),

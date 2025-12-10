@@ -82,6 +82,7 @@ final RxString reservationsError = ''.obs;
 
 Future<CreateReservationResponse?> createReservation({
   required String vehicleId,
+  required String vehicleModelId, // Add this parameter
   required DateTime pickupDate,
   required DateTime dropoffDate,
   required String branchId,
@@ -101,7 +102,9 @@ Future<CreateReservationResponse?> createReservation({
     // Create pricing breakdown
     final baseTotal = dailyRate * durationDays;
 
-    // FIXED: Using correct model constructors from reservation_models.dart
+    // Generate a unique reservation code
+    final reservationCode = 'RES-${DateTime.now().millisecondsSinceEpoch}';
+
     final pricing = ReservationPricing(
       currency: 'USD',
       breakdown: [
@@ -115,7 +118,7 @@ Future<CreateReservationResponse?> createReservation({
       fees: [
         ReservationFee(
           code: 'SERVICE_FEE',
-          amount: 10.00, // Example fee
+          amount: 10.00,
         ),
       ],
       taxes: [
@@ -129,7 +132,7 @@ Future<CreateReservationResponse?> createReservation({
           ? [
               ReservationDiscount(
                 promoCodeId: promoCode,
-                amount: 5.00, // Example discount
+                amount: 5.00,
               ),
             ]
           : [],
@@ -162,10 +165,12 @@ Future<CreateReservationResponse?> createReservation({
       lastPaymentAt: null,
     );
 
-    // Create the request
+    // Create the request - NOW INCLUDING REQUIRED FIELDS
     final request = CreateReservationRequest(
       createdChannel: 'mobile',
       vehicleId: vehicleId,
+      vehicleModelId: vehicleModelId, // Add this
+      code: reservationCode, // Add this - generated code
       pickup: BranchTime(
         branchId: branchId,
         at: pickupDate,
@@ -180,7 +185,8 @@ Future<CreateReservationResponse?> createReservation({
       notes: notes,
     );
 
-    print('📤 Creating reservation request...');
+      print('📤 Creating reservation request...');
+    print('📦 Request: ${request.toJson()}'); // Add this line
     final response = await _repository.createReservation(request);
 
     if (response.success) {
@@ -328,7 +334,7 @@ List<Reservation> getReservationsByStatus(String status) {
   ).toList();
 }
 
-// Get pending reservations
+// Get pending reservationsZ
 List<Reservation> get pendingReservations => getReservationsByStatus('pending');
 
 // Get confirmed reservations
