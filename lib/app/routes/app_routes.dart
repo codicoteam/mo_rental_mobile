@@ -33,6 +33,7 @@ abstract class AppRoutes {
   // Vehicle routes
   static const vehicleModels = '/vehicles/models';
   static const vehicleFleet = '/vehicles/fleet';
+  static const vehicleSelection = '/vehicles/selection';
 
   // Driver routes
   static const publicDrivers = '/drivers/public';

@@ -152,8 +152,6 @@ class VehicleInfo {
 // ==================== CREATE RESERVATION MODELS ====================
 
 class CreateReservationRequest {
-  final String? code;
-  final String? userId;
   final String createdChannel;
   final String vehicleId;
   final String? vehicleModelId;
@@ -163,10 +161,10 @@ class CreateReservationRequest {
   final ReservationPaymentSummary? paymentSummary;
   final ReservationDriverSnapshot driverSnapshot;
   final String? notes;
+  final String code; // REQUIRED FIELD
+  final String? userId;
 
   CreateReservationRequest({
-    this.code,
-    this.userId,
     required this.createdChannel,
     required this.vehicleId,
     this.vehicleModelId,
@@ -176,20 +174,22 @@ class CreateReservationRequest {
     this.paymentSummary,
     required this.driverSnapshot,
     this.notes,
+    required this.code, // REQUIRED
+    this.userId,
   });
 
   Map<String, dynamic> toJson() => {
-        if (code != null) "code": code,
-        if (userId != null) "user_id": userId,
         "created_channel": createdChannel,
         "vehicle_id": vehicleId,
         if (vehicleModelId != null) "vehicle_model_id": vehicleModelId,
+        "code": code, // REQUIRED
         "pickup": pickup.toJson(),
         "dropoff": dropoff.toJson(),
         "pricing": pricing.toJson(),
         if (paymentSummary != null) "payment_summary": paymentSummary!.toJson(),
         "driver_snapshot": driverSnapshot.toJson(),
         if (notes != null && notes!.isNotEmpty) "notes": notes,
+        if (userId != null) "user_id": userId,
       };
 }
 
@@ -653,16 +653,20 @@ class SimpleReservationRequest {
 
   CreateReservationRequest toFullRequest({
     required String createdChannel,
+    required String vehicleModelId,
     required String branchId,
     required double dailyRate,
     required Map<String, dynamic> userData,
   }) {
     final durationDays = endDate.difference(startDate).inDays;
     final baseTotal = dailyRate * durationDays;
+    final reservationCode = 'RES-${DateTime.now().millisecondsSinceEpoch}';
 
     return CreateReservationRequest(
       createdChannel: createdChannel,
       vehicleId: vehicleId,
+      vehicleModelId: vehicleModelId,
+      code: reservationCode, // REQUIRED FIELD
       pickup: BranchTime(branchId: branchId, at: startDate),
       dropoff: BranchTime(branchId: branchId, at: endDate),
       pricing: ReservationPricing(
@@ -719,6 +723,7 @@ class SimpleReservationRequest {
         ),
       ),
       notes: specialInstructions,
+      userId: userData['id']?.toString(),
     );
   }
 }
