@@ -48,6 +48,11 @@ class RatePlanController extends GetxController {
     
     // Check if user can access rate plans
     checkUserPermission();
+    
+    // LOAD RATE PLANS AUTOMATICALLY ON INIT
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadRatePlans();
+    });
   }
   
   bool get isAuthenticated => _storage.read('auth_token') != null;
@@ -57,24 +62,11 @@ class RatePlanController extends GetxController {
   void checkUserPermission() {
     final userData = _storage.read('user_data') ?? {};
     final roles = List<String>.from(userData['roles'] ?? []);
-    final isAdmin = roles.contains('admin') || roles.contains('manager');
     
     print('👤 User Role Check:');
     print('👤 Roles: $roles');
-    print('👤 Is Admin/Manager: $isAdmin');
-    
-    if (!isAdmin && isAuthenticated) {
-      errorMessage.value = 'Rate plans are only accessible to managers and administrators.';
-      Get.snackbar(
-        'Access Restricted',
-        'You need manager/admin privileges to view rate plans.',
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-        duration: Duration(seconds: 5),
-      );
-    }
   }
-  
+
   Future<void> loadRatePlans({int page = 1}) async {
     if (!isAuthenticated) {
       errorMessage.value = 'Please login to view rate plans';
@@ -87,30 +79,12 @@ class RatePlanController extends GetxController {
       return;
     }
     
-    // Check user role
-    final userData = _storage.read('user_data') ?? {};
-    final roles = List<String>.from(userData['roles'] ?? []);
-    final isAdmin = roles.contains('admin') || roles.contains('manager');
-    
-    if (!isAdmin) {
-      errorMessage.value = 'Access denied. Only managers/admins can view rate plans.';
-      Get.snackbar(
-        'Access Denied',
-        'Only managers/admins can view rate plans.',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: Duration(seconds: 5),
-      );
-      return;
-    }
-    
     isLoading.value = true;
     errorMessage.value = '';
     
     try {
       print('\n📊 ========== LOADING RATE PLANS ==========');
       print('📊 Page: $page');
-      print('👤 User Role: $roles');
       print('🔑 Auth Token Present: ${authToken != null}');
       
       final request = RatePlanRequest(
@@ -151,25 +125,17 @@ class RatePlanController extends GetxController {
         totalPages.value = ratePlanResponse.pagination.totalPages;
         totalItems.value = ratePlanResponse.pagination.total;
         
-        if (ratePlanResponse.plans.isNotEmpty) {
+        if (ratePlanResponse.plans.isNotEmpty && page == 1) {
           Get.snackbar(
             'Success',
             'Loaded ${ratePlanResponse.plans.length} rate plans',
             backgroundColor: Colors.green,
             colorText: Colors.white,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           );
         }
       } else {
         errorMessage.value = response.message;
-        
-        // Handle specific error messages
-        final message = response.message;
-        if (message.contains('Access denied') ||
-            message.contains('admin') ||
-            message.contains('manager')) {
-          errorMessage.value = 'Access denied. Only managers/admins can view rate plans.';
-        }
         
         Get.snackbar(
           'Error',

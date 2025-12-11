@@ -36,28 +36,50 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _emailController = TextEditingController(
       text: userProfile?.email ?? '',
     );
-    _emailController.dispose(); // Email is read-only
+    // REMOVED: _emailController.dispose(); // DON'T DISPOSE HERE!
   }
   
   @override
   void dispose() {
     _fullNameController.dispose();
     _phoneController.dispose();
+    _emailController.dispose(); // DISPOSE ALL CONTROLLERS HERE
     super.dispose();
   }
   
   Future<void> _updateProfile() async {
+    print('🚀 STARTING PROFILE UPDATE');
+    
     if (_formKey.currentState!.validate()) {
-      final result = await _authController.updateProfile(
-        fullName: _fullNameController.text.trim(),
-        phone: _phoneController.text.trim(),
-      );
-      
-      if (result.success) {
-        // Wait a bit before going back to show the success message
-        await Future.delayed(Duration(milliseconds: 500));
-        Get.back();
+      try {
+        print('✅ FORM VALIDATION PASSED');
+        print('📝 Full Name: ${_fullNameController.text.trim()}');
+        print('📱 Phone: ${_phoneController.text.trim()}');
+        
+        final result = await _authController.updateProfile(
+          fullName: _fullNameController.text.trim(),
+          phone: _phoneController.text.trim(),
+        );
+        
+        print('📊 UPDATE RESULT: ${result.success}');
+        print('📨 MESSAGE: ${result.message}');
+        
+        if (result.success) {
+          print('✅ PROFILE UPDATE SUCCESSFUL');
+          // Wait a bit before going back to show the success message
+          await Future.delayed(const Duration(milliseconds: 500));
+          Get.back();
+        } else {
+          print('❌ PROFILE UPDATE FAILED: ${result.message}');
+          // Error will be shown through authController.errorMessage
+        }
+      } catch (e) {
+        print('🔥 EXCEPTION IN _updateProfile: $e');
+        print('📋 Stack trace: ${e.toString()}');
+        rethrow;
       }
+    } else {
+      print('❌ FORM VALIDATION FAILED');
     }
   }
   
@@ -174,13 +196,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   fillColor: Colors.grey[50],
                 ),
                 validator: (value) {
+                  print('🔍 Validating Full Name: $value');
                   if (value == null || value.isEmpty) {
                     return 'Please enter your name';
                   }
-                  if (!_authController.isValidName(value)) {
+                  if (_authController.isValidName(value)) {
+                    return null;
+                  } else {
                     return 'Name must be 2-50 characters';
                   }
-                  return null;
                 },
               ),
               
@@ -228,13 +252,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 keyboardType: TextInputType.phone,
                 validator: (value) {
+                  print('🔍 Validating Phone: $value');
                   if (value == null || value.isEmpty) {
                     return 'Please enter your phone number';
                   }
-                  if (!_authController.isValidPhone(value)) {
+                  if (_authController.isValidPhone(value)) {
+                    return null;
+                  } else {
                     return 'Please enter a valid phone number';
                   }
-                  return null;
                 },
               ),
               
@@ -242,6 +268,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               
               // Save Button
               Obx(() {
+                print('🔄 Rebuilding Save Button - Loading: ${_authController.isUpdatingProfile.value}');
                 return SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -289,6 +316,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 height: 50,
                 child: OutlinedButton(
                   onPressed: () {
+                    print('❌ Cancelling edit profile');
                     Get.back();
                   },
                   style: OutlinedButton.styleFrom(
@@ -309,7 +337,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               
               // Error Message
               Obx(() {
-                if (_authController.errorMessage.value.isEmpty) {
+                final error = _authController.errorMessage.value;
+                print('🔍 Error Message Status: ${error.isEmpty ? "No error" : "Error: $error"}');
+                if (error.isEmpty) {
                   return const SizedBox.shrink();
                 }
                 return Container(
@@ -326,7 +356,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          _authController.errorMessage.value,
+                          error,
                           style: const TextStyle(color: Colors.red),
                         ),
                       ),

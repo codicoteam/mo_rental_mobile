@@ -454,55 +454,52 @@ class ChatRepository {
   }
 
 // Delete message - FIXED
-  Future<bool> deleteMessage(String messageId) async {
-    try {
-      final token = _getAuthToken();
-      if (token == null) {
-        throw Exception('No authentication token found');
-      }
+// In ChatRepository class - FIXED deleteMessage method
+Future<bool> deleteMessage(String messageId) async {
+  try {
+    final token = _getAuthToken();
+    if (token == null) {
+      throw Exception('No authentication token found');
+    }
 
-      // Validate that messageId is a valid ObjectId (24-character hex string)
-      if (!_isValidObjectId(messageId)) {
-        print('❌ Invalid message ID format: $messageId');
-        throw Exception(
-            'Invalid message ID format. Must be a 24-character hex string.');
-      }
+    // IMPORTANT: Don't validate ObjectId format here - let the backend handle it
+    // The backend error shows it's expecting an ObjectId, so we need to ensure
+    // we're passing a valid message ID, not a conversation ID
+    print('🗑️ Deleting message with ID: $messageId');
 
-      print('🗑️ Deleting message: $messageId');
+    // BYPASS THE BROKEN ApiService - use http directly
+    final url = Uri.parse(
+        'http://13.61.185.238:5050/api/v1/chats/messages/$messageId');
+    final response = await http.delete(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'accept': 'application/json',
+      },
+    );
 
-      // BYPASS THE BROKEN ApiService - use http directly
-      final url = Uri.parse(
-          'http://13.61.185.238:5050/api/v1/chats/messages/$messageId');
-      final response = await http.delete(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'accept': 'application/json',
-        },
-      );
+    print('📊 HTTP Response Status: ${response.statusCode}');
+    print('📄 HTTP Response Body: ${response.body}');
 
-      print('📊 HTTP Response Status: ${response.statusCode}');
-      print('📄 HTTP Response Body: ${response.body}');
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-
-        if (jsonResponse['success'] == true) {
-          print('✅ Message deleted: $messageId');
-          return true;
-        } else {
-          print('❌ Failed to delete message: ${jsonResponse['message']}');
-          return false;
-        }
+      if (jsonResponse['success'] == true) {
+        print('✅ Message deleted successfully: $messageId');
+        return true;
       } else {
-        print('❌ Request failed with status ${response.statusCode}');
+        print('❌ Failed to delete message: ${jsonResponse['message']}');
         return false;
       }
-    } catch (e) {
-      print('❌ Repository error in deleteMessage: $e');
+    } else {
+      print('❌ Request failed with status ${response.statusCode}');
       return false;
     }
+  } catch (e) {
+    print('❌ Repository error in deleteMessage: $e');
+    return false;
   }
+}
 
 // Helper method to validate MongoDB ObjectId
   bool _isValidObjectId(String id) {

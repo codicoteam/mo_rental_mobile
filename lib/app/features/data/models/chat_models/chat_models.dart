@@ -228,6 +228,16 @@ class ChatMessage {
     final currentUserId = GetStorage().read('user_data')?['_id'] ?? '';
     return readBy?.contains(currentUserId) ?? false;
   }
+
+  // Helper methods
+  bool get hasContent => content.isNotEmpty;
+
+  String get displayContent {
+    if (isDeleted && !hasContent) {
+      return 'This message was deleted';
+    }
+    return content;
+  }
 }
 
 class SendMessageRequest {

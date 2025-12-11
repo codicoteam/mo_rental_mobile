@@ -220,6 +220,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Get.snackbar('Coming Soon', 'Support feature');
                     },
                   ),
+                    _buildActionButton(
+      icon: Icons.delete_forever,
+      title: 'Delete Account',
+      color: Colors.red,
+      onTap: () {
+        authController.showDeleteAccountDialog();
+      },
+    ),
                   _buildActionButton(
                     icon: Icons.logout,
                     title: 'Logout',

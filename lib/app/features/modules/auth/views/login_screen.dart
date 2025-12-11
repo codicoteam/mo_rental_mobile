@@ -44,14 +44,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _forgotPassword() {
-    Get.snackbar(
-      'Forgot Password',
-      'Password reset functionality coming soon',
-      backgroundColor: AppPalette.primaryBlue,
-      colorText: Colors.white,
-    );
-  }
+void _forgotPassword() {
+  _authController.showForgotPasswordDialog();
+}
 
   @override
   Widget build(BuildContext context) {
