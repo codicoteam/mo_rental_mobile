@@ -164,76 +164,80 @@ class _SidebarWidgetState extends State<SidebarWidget>
   }
 
   void _handleNavigation(SidebarItem item) {
-    try {
-      switch (item.route) {
-        case '/reservations/availability':
-          Get.toNamed(AppRoutes.checkAvailability);
-          break;
-        case '/promo-codes':
-          Get.toNamed(AppRoutes.promoCodes);
-          break;
-        case '/chat/conversations':
-          Get.toNamed(AppRoutes.chatConversations);
-          break;
-        case '/home':
-          Get.offAllNamed('/');
-          break;
-        case '/reservations/list':
-        case '/favorites':
-        case '/history':
-        case '/payments':
-        case '/settings':
-        case '/support':
-          Get.snackbar(
-            'Coming Soon',
-            '${item.title} feature is under development',
-            snackPosition: SnackPosition.BOTTOM,
-            duration: const Duration(seconds: 2),
-          );
-          break;
-        case '/reservations/create':
-          Get.toNamed(
-            AppRoutes.createReservation,
-          );
-          break;
-        case '/branches':
-          Get.toNamed(AppRoutes.branches);
-          break;
-        case '/branches/nearby':
-          Get.toNamed(AppRoutes.nearbyBranches);
-          break;
-        case '/vehicles/models':
-          Get.toNamed(AppRoutes.vehicleModels);
-          break;
-        case '/vehicles/fleet':
-          Get.toNamed(AppRoutes.vehicleFleet);
-          break;
-        case '/drivers/public':
-          Get.toNamed(AppRoutes.publicDrivers);
-          break;
-        case '/drivers/my-profile':
-          Get.toNamed(AppRoutes.myDriverProfile);
-          break;
-        default:
-          debugPrint('Route not handled: ${item.route}');
-          Get.snackbar(
-            'Coming Soon',
-            '${item.title} feature is under development',
-            snackPosition: SnackPosition.BOTTOM,
-            duration: const Duration(seconds: 2),
-          );
-      }
-    } catch (e) {
-      debugPrint('❌ Navigation error for ${item.route}: $e');
-      Get.snackbar(
-        'Navigation Error',
-        'Could not load ${item.title}',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
+  try {
+    switch (item.route) {
+      case '/reservations/list':
+        Get.toNamed(AppRoutes.reservationList);
+        break;
+      case '/reservations/detail':
+        // This would be called with arguments from a specific reservation
+        Get.toNamed(AppRoutes.reservationDetail);
+        break;
+      case '/reservations/availability':
+        Get.toNamed(AppRoutes.checkAvailability);
+        break;
+      case '/reservations/create':
+        Get.toNamed(AppRoutes.createReservation);
+        break;
+      case '/promo-codes':
+        Get.toNamed(AppRoutes.promoCodes);
+        break;
+      case '/chat/conversations':
+        Get.toNamed(AppRoutes.chatConversations);
+        break;
+      case '/home':
+        Get.offAllNamed('/');
+        break;
+      case '/branches':
+        Get.toNamed(AppRoutes.branches);
+        break;
+      case '/branches/nearby':
+        Get.toNamed(AppRoutes.nearbyBranches);
+        break;
+      case '/vehicles/models':
+        Get.toNamed(AppRoutes.vehicleModels);
+        break;
+      case '/vehicles/fleet':
+        Get.toNamed(AppRoutes.vehicleFleet);
+        break;
+      case '/drivers/public':
+        Get.toNamed(AppRoutes.publicDrivers);
+        break;
+      case '/drivers/my-profile':
+        Get.toNamed(AppRoutes.myDriverProfile);
+        break;
+      case '/favorites':
+      case '/history':
+      case '/payments':
+      case '/settings':
+      case '/support':
+        Get.snackbar(
+          'Coming Soon',
+          '${item.title} feature is under development',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 2),
+        );
+        break;
+      default:
+        debugPrint('Route not handled: ${item.route}');
+        Get.snackbar(
+          'Coming Soon',
+          '${item.title} feature is under development',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 2),
+        );
     }
+  } catch (e) {
+    debugPrint('❌ Navigation error for ${item.route}: $e');
+    Get.snackbar(
+      'Navigation Error',
+      'Could not load ${item.title}',
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 3),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import '../models/auth_models/api_response.dart';
 
@@ -8,8 +9,31 @@ class ApiService extends GetxService {
   
   final String baseUrl = 'http://13.61.185.238:5050';
   final Duration timeout = Duration(seconds: 15);
+  final GetStorage _storage = GetStorage();
 
-  // POST method
+  // Helper method to get headers with authorization token
+  Future<Map<String, String>> _getHeaders({Map<String, String>? additionalHeaders}) async {
+    final token = _storage.read<String>('auth_token');
+    
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    
+    // Add authorization header if token exists
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    
+    // Merge with additional headers if provided
+    if (additionalHeaders != null) {
+      headers.addAll(additionalHeaders);
+    }
+    
+    return headers;
+  }
+
+  // POST method - UPDATED to accept headers parameter
   Future<ApiResponse<T>> post<T>(
     String endpoint,
     Map<String, dynamic> body, {
@@ -25,14 +49,22 @@ class ApiService extends GetxService {
       print('⏰ Timeout: ${timeout.inSeconds} seconds');
       
       final url = Uri.parse('$baseUrl$endpoint');
-      final defaultHeaders = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      };
+      
+      // Get default headers and merge with provided headers
+      final defaultHeaders = await _getHeaders();
+      final finalHeaders = headers != null 
+          ? {...defaultHeaders, ...headers}
+          : defaultHeaders;
+      
+      // Log headers for debugging
+      if (finalHeaders.containsKey('Authorization')) {
+        final authHeader = finalHeaders['Authorization']!;
+        print('🔑 Authorization: ${authHeader.substring(0, min(30, authHeader.length))}...');
+      }
       
       final response = await http.post(
         url,
-        headers: {...defaultHeaders, ...?headers},
+        headers: finalHeaders,
         body: json.encode(body),
       ).timeout(timeout, onTimeout: () {
         throw http.ClientException('Request timeout after ${timeout.inSeconds} seconds');
@@ -41,7 +73,7 @@ class ApiService extends GetxService {
       stopwatch.stop();
       
       print('✅ API CALL COMPLETED');
-      print('⏱️  Response Time: ${stopwatch.elapsedMilliseconds}ms');
+      print('⏱️ Response Time: ${stopwatch.elapsedMilliseconds}ms');
       print('📊 Status Code: ${response.statusCode}');
       print('📄 Response Headers: ${response.headers}');
       print('📝 Response Body: ${response.body}');
@@ -79,7 +111,7 @@ class ApiService extends GetxService {
     } on http.ClientException catch (e) {
       stopwatch.stop();
       print('❌ HTTP CLIENT ERROR: $e');
-      print('⏱️  Failed after: ${stopwatch.elapsedMilliseconds}ms');
+      print('⏱️ Failed after: ${stopwatch.elapsedMilliseconds}ms');
       return ApiResponse<T>(
         success: false,
         message: 'Network error: ${e.message}',
@@ -96,7 +128,7 @@ class ApiService extends GetxService {
     } catch (e) {
       stopwatch.stop();
       print('❌ UNEXPECTED ERROR: $e');
-      print('⏱️  Failed after: ${stopwatch.elapsedMilliseconds}ms');
+      print('⏱️ Failed after: ${stopwatch.elapsedMilliseconds}ms');
       return ApiResponse<T>(
         success: false,
         message: 'An unexpected error occurred: ${e.toString()}',
@@ -105,7 +137,7 @@ class ApiService extends GetxService {
     }
   }
 
-  // GET method
+  // GET method - UPDATED with headers parameter
   Future<ApiResponse<T>> get<T>(
     String endpoint, {
     Map<String, String>? headers,
@@ -115,13 +147,19 @@ class ApiService extends GetxService {
     final Stopwatch stopwatch = Stopwatch()..start();
     
     try {
-      print('\n🌐 API CALL STARTED');
+      print('\n🌐 GET API CALL STARTED');
       print('📡 URL: $baseUrl$endpoint');
-      if (queryParams != null && queryParams.isNotEmpty) {
-        print('🔍 Query Params: $queryParams');
-      }
-      if (headers != null && headers.containsKey('Authorization')) {
-        print('🔑 Token: ${headers['Authorization']?.substring(0, 30)}...');
+      
+      // Get default headers and merge with provided headers
+      final defaultHeaders = await _getHeaders();
+      final finalHeaders = headers != null 
+          ? {...defaultHeaders, ...headers}
+          : defaultHeaders;
+      
+      // Log headers for debugging
+      if (finalHeaders.containsKey('Authorization')) {
+        final authHeader = finalHeaders['Authorization']!;
+        print('🔑 Authorization: ${authHeader.substring(0, min(30, authHeader.length))}...');
       }
       
       String url = '$baseUrl$endpoint';
@@ -130,25 +168,42 @@ class ApiService extends GetxService {
       if (queryParams != null && queryParams.isNotEmpty) {
         final queryString = Uri(queryParameters: queryParams).query;
         url += '?$queryString';
+        print('🔍 Query Params: $queryParams');
       }
       
       final response = await http.get(
         Uri.parse(url),
-        headers: headers,
+        headers: finalHeaders,
       ).timeout(timeout);
 
       stopwatch.stop();
       
-      print('✅ API CALL COMPLETED');
+      print('✅ GET API CALL COMPLETED');
       print('⏱️ Response Time: ${stopwatch.elapsedMilliseconds}ms');
       print('📊 Status Code: ${response.statusCode}');
       print('📄 Response Headers: ${response.headers}');
-      print('📝 Response Body: ${response.body}');
+      
+      // Check for authentication errors first
+      if (response.statusCode == 401) {
+        print('🔐 UNAUTHORIZED - Token may be invalid or expired');
+        print('📝 Response Body: ${response.body}');
+        
+        // Clear token if unauthorized
+        _storage.remove('auth_token');
+        print('🗑️ Cleared invalid token from storage');
+        
+        return ApiResponse<T>(
+          success: false,
+          message: 'Session expired. Please login again.',
+          error: {'statusCode': 401, 'message': 'Unauthorized'},
+        );
+      }
       
       final Map<String, dynamic> responseData = json.decode(response.body);
+      print('📝 Response Data: $responseData');
 
       if (response.statusCode == 200) {
-        print('🎉 API SUCCESS');
+        print('🎉 GET API SUCCESS');
         return ApiResponse<T>(
           success: true,
           message: responseData['message'] ?? 'Success',
@@ -157,7 +212,7 @@ class ApiService extends GetxService {
               : null,
         );
       } else {
-        print('❌ API ERROR');
+        print('❌ GET API ERROR');
         print('❌ Error Message: ${responseData['message']}');
         print('❌ Error Details: $responseData');
         
@@ -175,6 +230,14 @@ class ApiService extends GetxService {
         message: 'Network error: ${e.message}',
         error: e,
       );
+    } on FormatException catch (e) {
+      stopwatch.stop();
+      print('❌ JSON FORMAT ERROR: $e');
+      return ApiResponse<T>(
+        success: false,
+        message: 'Invalid response from server',
+        error: e,
+      );
     } catch (e) {
       stopwatch.stop();
       print('❌ UNEXPECTED ERROR: $e');
@@ -186,7 +249,7 @@ class ApiService extends GetxService {
     }
   }
 
-  // PUT method
+  // PUT method - UPDATED with headers parameter
   Future<ApiResponse<T>> put<T>(
     String endpoint,
     Map<String, dynamic> body, {
@@ -201,14 +264,16 @@ class ApiService extends GetxService {
       print('📦 REQUEST BODY: $body');
       
       final url = Uri.parse('$baseUrl$endpoint');
-      final defaultHeaders = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      };
+      
+      // Get default headers and merge with provided headers
+      final defaultHeaders = await _getHeaders();
+      final finalHeaders = headers != null 
+          ? {...defaultHeaders, ...headers}
+          : defaultHeaders;
       
       final response = await http.put(
         url,
-        headers: {...defaultHeaders, ...?headers},
+        headers: finalHeaders,
         body: json.encode(body),
       ).timeout(timeout);
 
@@ -251,7 +316,7 @@ class ApiService extends GetxService {
     }
   }
 
-  // DELETE method
+  // DELETE method - UPDATED with headers parameter
   Future<ApiResponse<T>> delete<T>(
     String endpoint, {
     Map<String, String>? headers,
@@ -263,13 +328,16 @@ class ApiService extends GetxService {
       print('📡 URL: $baseUrl$endpoint');
       
       final url = Uri.parse('$baseUrl$endpoint');
-      final defaultHeaders = {
-        'Accept': 'application/json',
-      };
+      
+      // Get default headers and merge with provided headers
+      final defaultHeaders = await _getHeaders();
+      final finalHeaders = headers != null 
+          ? {...defaultHeaders, ...headers}
+          : defaultHeaders;
       
       final response = await http.delete(
         url,
-        headers: {...defaultHeaders, ...?headers},
+        headers: finalHeaders,
       ).timeout(timeout);
 
       stopwatch.stop();
@@ -306,5 +374,90 @@ class ApiService extends GetxService {
         error: e,
       );
     }
+  }
+
+  // In your ApiService class, add this method:
+Future<ApiResponse<T>> patch<T>(
+  String endpoint,
+  Map<String, dynamic> body, {
+  Map<String, String>? headers,
+  T Function(Map<String, dynamic>)? fromJson,
+}) async {
+  final Stopwatch stopwatch = Stopwatch()..start();
+  
+  try {
+    print('\n🌐 PATCH API CALL STARTED');
+    print('📡 URL: $baseUrl$endpoint');
+    print('📦 REQUEST BODY: $body');
+    
+    final url = Uri.parse('$baseUrl$endpoint');
+    
+    // Get default headers and merge with provided headers
+    final defaultHeaders = await _getHeaders();
+    final finalHeaders = headers != null 
+        ? {...defaultHeaders, ...headers}
+        : defaultHeaders;
+    
+    final response = await http.patch(
+      url,
+      headers: finalHeaders,
+      body: json.encode(body),
+    ).timeout(timeout);
+
+    stopwatch.stop();
+    
+    print('✅ PATCH API CALL COMPLETED');
+    print('⏱️ Response Time: ${stopwatch.elapsedMilliseconds}ms');
+    print('📊 Status Code: ${response.statusCode}');
+    print('📝 Response Body: ${response.body}');
+    
+    final Map<String, dynamic> responseData = json.decode(response.body);
+
+    if (response.statusCode == 200) {
+      print('🎉 PATCH API SUCCESS');
+      return ApiResponse<T>(
+        success: true,
+        message: responseData['message'] ?? 'Success',
+        data: fromJson != null && responseData['data'] != null 
+            ? fromJson(responseData['data']) 
+            : null,
+      );
+    } else {
+      print('❌ PATCH API ERROR');
+      print('❌ Error Message: ${responseData['message']}');
+      
+      return ApiResponse<T>(
+        success: false,
+        message: responseData['message'] ?? 'Request failed',
+        error: responseData,
+      );
+    }
+  } catch (e) {
+    stopwatch.stop();
+    print('❌ PATCH API ERROR: $e');
+    return ApiResponse<T>(
+      success: false,
+      message: e.toString(),
+      error: e,
+    );
+  }
+}
+
+  // Helper method to get the minimum of two values
+  int min(int a, int b) => a < b ? a : b;
+
+  // Optional: Method to check if user is authenticated
+  bool get isAuthenticated {
+    final token = _storage.read<String>('auth_token');
+    return token != null && token.isNotEmpty;
+  }
+
+  // Optional: Method to get current token
+  String? get currentToken => _storage.read<String>('auth_token');
+
+  // Optional: Method to clear authentication
+  void clearAuth() {
+    _storage.remove('auth_token');
+    print('🔐 Auth token cleared from ApiService');
   }
 }

@@ -8,13 +8,18 @@ abstract class AppRoutes {
   static const login = '/login';
   static const register = '/register';
   static const verifyEmail = '/verify-email';
+  
   // Main app screens
   static const home = '/home';
   static const main = '/main';
   static const ratePlans = '/rate-plans';
   static const promoCodes = '/promo-codes';
 
-  // Reservation screens - ADD THESE
+  // Profile screens - ADD THESE
+  static const profile = '/profile';
+  static const editProfile = '/edit-profile';
+
+  // Reservation screens
   static const checkAvailability = '/reservations/availability';
   static const createReservation = '/reservations/create';
   static const reservationList = '/reservations/list';
@@ -26,7 +31,7 @@ abstract class AppRoutes {
   static const createChat = '/chat/create';
 
   // Branch screens
-  static const branches = '/branches'; // Changed from branchesList
+  static const branches = '/branches';
   static const branchDetail = '/branches/detail';
   static const nearbyBranches = '/branches/nearby';
 
@@ -37,9 +42,9 @@ abstract class AppRoutes {
 
   // Driver routes
   static const publicDrivers = '/drivers/public';
-  static const myDriverProfile = '/drivers/my-profile';  // ADD THIS
-  static const createDriverProfile = '/drivers/create-profile';  // ADD THIS
-  static const editDriverProfile = '/drivers/edit-profile';  //
+  static const myDriverProfile = '/drivers/my-profile';
+  static const createDriverProfile = '/drivers/create-profile';
+  static const editDriverProfile = '/drivers/edit-profile';
 
   // Helper method to get chat detail with parameters
   static String chatDetailWithId(String conversationId) {

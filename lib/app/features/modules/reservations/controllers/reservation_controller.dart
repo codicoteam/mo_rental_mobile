@@ -190,21 +190,22 @@ Future<CreateReservationResponse?> createReservation({
     final response = await _repository.createReservation(request);
 
     if (response.success) {
-      print('✅ Reservation created successfully!');
-      Get.snackbar(
-        'Success',
-        'Reservation created successfully!',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
+  print('✅ Reservation created successfully!');
+  Get.snackbar(
+    'Success',
+    'Reservation created successfully!\nID: ${response.data?.id ?? 'Unknown'}',
+    backgroundColor: Colors.green,
+    colorText: Colors.white,
+    duration: Duration(seconds: 5),
+  );
 
-      // Clear availability results
-      availabilityResult.value = null;
+  // Clear availability results
+  availabilityResult.value = null;
 
-      return response;
-    } else {
-      throw Exception(response.message);
-    }
+  return response;
+} else {
+  throw Exception(response.message);
+}
   } catch (e) {
     error.value = e.toString();
     print('❌ Error creating reservation: $e');

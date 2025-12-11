@@ -11,7 +11,7 @@ import '../features/modules/auth/views/verify_email_screen.dart';
 import '../features/modules/bindings/branch_binding.dart';
 import '../features/modules/bindings/chat_binding.dart';
 import '../features/modules/bindings/rate_plan_binding.dart';
-import '../features/modules/bindings/reservation_binding.dart'; // ADD THIS
+import '../features/modules/bindings/reservation_binding.dart';
 import '../features/modules/branches/views/branch_detail_screen.dart';
 import '../features/modules/branches/views/branches_list_screen.dart';
 import '../features/modules/branches/views/nearby_branches_screen.dart';
@@ -22,9 +22,13 @@ import '../features/modules/drivers/controllers/driver_profile_controller.dart';
 import '../features/modules/drivers/views/driver_profile_form_screen.dart';
 import '../features/modules/drivers/views/my_driver_profile_screen.dart';
 import '../features/modules/drivers/views/public_drivers_screen.dart';
-import '../features/modules/rate_plans/views/rate_plans_screen.dart'; // ADD THIS (future)
+import '../features/modules/profile/views/edit_profile_screen.dart'; // ADD THIS IMPORT
+import '../features/modules/profile/views/profile_screen.dart'; // ADD THIS IMPORT
+import '../features/modules/rate_plans/views/rate_plans_screen.dart';
 import '../features/modules/reservations/views/availability_screen.dart';
 import '../features/modules/reservations/views/create_reservation_screen.dart';
+import '../features/modules/reservations/views/reservation_detail_screen.dart';
+import '../features/modules/reservations/views/reservation_list_screen.dart';
 import '../features/modules/vehicles/controllers/vehicle_controller.dart';
 import '../features/modules/vehicles/controllers/vehicle_model_controller.dart';
 import '../features/modules/vehicles/views/vehicle_models_screen.dart';
@@ -49,7 +53,7 @@ class AppPages {
     GetPage(
       name: AppRoutes.login,
       page: () => const LoginScreen(),
-      binding: AuthBinding(), // Your auth binding
+      binding: AuthBinding(),
     ),
     GetPage(
       name: AppRoutes.register,
@@ -96,7 +100,7 @@ class AppPages {
       binding: ReservationBinding(),
     ),
     GetPage(
-      name: AppRoutes.branches, // Changed from branchesList
+      name: AppRoutes.branches,
       page: () => const BranchesListScreen(),
       binding: BranchBinding(),
     ),
@@ -106,15 +110,12 @@ class AppPages {
       binding: BranchBinding(),
     ),
     GetPage(
-      name: '/BranchDetailScreen', // or use AppRoutes.branchDetail
+      name: '/BranchDetailScreen',
       page: () {
         final branch = Get.arguments as Branch;
         return BranchDetailScreen(branch: branch);
       },
     ),
-    // In AppPages
-// In AppPages - UPDATE THIS SECTION
-    // In app_pages.dart, update the CreateReservationScreen route:
     GetPage(
       name: AppRoutes.createReservation,
       page: () {
@@ -123,8 +124,16 @@ class AppPages {
       },
       binding: ReservationBinding(),
     ),
-
-    // Vehicle Models Screen
+    GetPage(
+      name: AppRoutes.reservationList,
+      page: () => const ReservationListScreen(),
+      binding: ReservationBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.reservationDetail,
+      page: () => const ReservationDetailScreen(),
+      binding: ReservationBinding(),
+    ),
     GetPage(
       name: AppRoutes.vehicleModels,
       page: () => const VehicleModelsScreen(),
@@ -135,8 +144,6 @@ class AppPages {
         );
       }),
     ),
-
-    // Vehicle Fleet Screen
     GetPage(
       name: AppRoutes.vehicleFleet,
       page: () => const VehiclesScreen(),
@@ -147,16 +154,12 @@ class AppPages {
         );
       }),
     ),
-
-    // In app_pages.dart, add:
     GetPage(
       name: AppRoutes.vehicleSelection,
       page: () => VehicleSelectionScreen(
         isSelectionMode: Get.arguments?['isSelectionMode'] ?? true,
       ),
     ),
-
-    // Public Drivers Screen
     GetPage(
       name: AppRoutes.publicDrivers,
       page: () => const PublicDriversScreen(),
@@ -167,8 +170,6 @@ class AppPages {
         );
       }),
     ),
-
-    // My Driver Profile Screen
     GetPage(
       name: AppRoutes.myDriverProfile,
       page: () => const MyDriverProfileScreen(),
@@ -179,8 +180,6 @@ class AppPages {
         );
       }),
     ),
-
-    // Create Driver Profile Screen
     GetPage(
       name: AppRoutes.createDriverProfile,
       page: () => const DriverProfileFormScreen(),
@@ -191,8 +190,6 @@ class AppPages {
         );
       }),
     ),
-
-    // Edit Driver Profile Screen
     GetPage(
       name: AppRoutes.editDriverProfile,
       page: () => DriverProfileFormScreen(isEditMode: true),
@@ -202,6 +199,17 @@ class AppPages {
           () => DriverProfileController(Get.find<DriverProfileRepository>()),
         );
       }),
+    ),
+    // ADD THESE PROFILE ROUTES
+    GetPage(
+      name: AppRoutes.profile,
+      page: () => const ProfileScreen(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.editProfile,
+      page: () => const EditProfileScreen(),
+      binding: AuthBinding(),
     ),
   ];
 }

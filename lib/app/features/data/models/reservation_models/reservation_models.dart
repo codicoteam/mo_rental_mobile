@@ -470,12 +470,42 @@ class CreateReservationResponse {
     this.data,
   });
 
-  factory CreateReservationResponse.fromJson(Map<String, dynamic> json) =>
-      CreateReservationResponse(
+  factory CreateReservationResponse.fromJson(Map<String, dynamic> json) {
+    try {
+      print('📦 Parsing CreateReservationResponse from JSON...');
+      
+      // Check if we have valid data to parse
+      if (json['data'] == null) {
+        print('⚠️ No data field in response');
+        return CreateReservationResponse(
+          success: json["success"] ?? false,
+          message: json["message"] ?? '',
+          data: null,
+        );
+      }
+      
+      // Try to parse the reservation data
+      final dataJson = json['data'] as Map<String, dynamic>;
+      
+      print('✅ Successfully parsed reservation data');
+      return CreateReservationResponse(
         success: json["success"] ?? false,
         message: json["message"] ?? '',
-        data: json["data"] != null ? Reservation.fromJson(json["data"]) : null,
+        data: Reservation.fromJson(dataJson),
       );
+    } catch (e, stackTrace) {
+      print('❌ Error parsing CreateReservationResponse: $e');
+      print('📋 Stack trace: $stackTrace');
+      print('📋 Raw JSON data: $json');
+      
+      // Return a response without data but with success message
+      return CreateReservationResponse(
+        success: json["success"] ?? false,
+        message: json["message"] ?? 'Reservation created but failed to parse details',
+        data: null,
+      );
+    }
+  }
 }
 
 // ==================== RESERVATION MODELS ====================
@@ -513,24 +543,141 @@ class Reservation {
     this.vehicleDetails,
   });
 
-  factory Reservation.fromJson(Map<String, dynamic> json) => Reservation(
-        id: json["_id"] ?? json["id"] ?? '',
-        vehicleId: json["vehicle_id"] ?? '',
-        userId: json["user_id"] ?? '',
-        startDate: DateTime.parse(json["start_date"]),
-        endDate: DateTime.parse(json["end_date"]),
-        status: json["status"] ?? 'pending',
-        totalAmount: (json["total_amount"] ?? 0).toDouble(),
-        specialInstructions: json["special_instructions"],
-        pickupLocation: json["pickup_location"],
-        dropoffLocation: json["dropoff_location"],
-        promoCode: json["promo_code"],
-        createdAt: DateTime.parse(json["created_at"]),
-        updatedAt: DateTime.parse(json["updated_at"]),
-        vehicleDetails: json["vehicle_details"] != null
-            ? VehicleInfo.fromJson(json["vehicle_details"])
-            : null,
+  factory Reservation.fromJson(Map<String, dynamic> json) {
+    try {
+      print('🔄 Parsing Reservation from JSON...');
+      print('📋 JSON keys: ${json.keys}');
+      
+      // Helper function to extract ID from nested object
+      String extractId(dynamic value) {
+        if (value == null) return '';
+        if (value is String) return value;
+        if (value is Map<String, dynamic>) {
+          return value['_id']?.toString() ?? 
+                 value['id']?.toString() ?? 
+                 '';
+        }
+        return value.toString();
+      }
+
+      // Helper function to extract double from MongoDB Decimal128 format
+      double extractAmount(dynamic value) {
+        if (value == null) return 0.0;
+        if (value is num) return value.toDouble();
+        if (value is Map<String, dynamic>) {
+          if (value.containsKey('\$numberDecimal')) {
+            return double.tryParse(value['\$numberDecimal'].toString()) ?? 0.0;
+          }
+          return (value['amount'] ?? value['total'] ?? 0).toDouble();
+        }
+        return double.tryParse(value.toString()) ?? 0.0;
+      }
+
+      // Extract dates from nested pickup/dropoff objects
+      DateTime? startDate;
+      DateTime? endDate;
+      
+      if (json['pickup'] is Map) {
+        final pickup = json['pickup'] as Map<String, dynamic>;
+        final at = pickup['at'];
+        if (at != null) {
+          try {
+            startDate = DateTime.parse(at.toString());
+          } catch (e) {
+            print('⚠️ Error parsing start_date: $e');
+          }
+        }
+      }
+      
+      if (json['dropoff'] is Map) {
+        final dropoff = json['dropoff'] as Map<String, dynamic>;
+        final at = dropoff['at'];
+        if (at != null) {
+          try {
+            endDate = DateTime.parse(at.toString());
+          } catch (e) {
+            print('⚠️ Error parsing end_date: $e');
+          }
+        }
+      }
+
+      // Extract total amount from pricing
+      double totalAmount = 0.0;
+      if (json['pricing'] is Map) {
+        final pricing = json['pricing'] as Map<String, dynamic>;
+        totalAmount = extractAmount(pricing['grand_total']);
+      }
+
+      // Extract vehicle details if available
+      VehicleInfo? vehicleDetails;
+      if (json['vehicle_id'] is Map) {
+        final vehicle = json['vehicle_id'] as Map<String, dynamic>;
+        try {
+          vehicleDetails = VehicleInfo.fromJson({
+            '_id': vehicle['_id'] ?? '',
+            'make': json['vehicle_model_id']?['make'] ?? '',
+            'model': json['vehicle_model_id']?['model'] ?? '',
+            'year': json['vehicle_model_id']?['year'] ?? 0,
+            'license_plate': vehicle['plate_number'] ?? '',
+            'color': vehicle['color'],
+            'fuel_type': json['vehicle_model_id']?['fuel_type'],
+            'seating_capacity': json['vehicle_model_id']?['seats'] ?? 5,
+            'daily_rate': 0.0,
+            'is_available': vehicle['availability_state'] == 'available',
+          });
+        } catch (e) {
+          print('⚠️ Error parsing vehicle details: $e');
+        }
+      }
+
+      final reservation = Reservation(
+        id: json['_id'] ?? json['id'] ?? '',
+        vehicleId: extractId(json['vehicle_id']),
+        userId: extractId(json['user_id']),
+        startDate: startDate ?? DateTime.now(),
+        endDate: endDate ?? DateTime.now().add(const Duration(days: 1)),
+        status: json['status'] ?? 'pending',
+        totalAmount: totalAmount,
+        specialInstructions: json['notes']?.toString(),
+        pickupLocation: json['pickup']?['branch_id']?.toString(),
+        dropoffLocation: json['dropoff']?['branch_id']?.toString(),
+        promoCode: json['promo_code']?.toString(),
+        createdAt: json['created_at'] != null 
+            ? DateTime.parse(json['created_at'].toString())
+            : DateTime.now(),
+        updatedAt: json['updated_at'] != null 
+            ? DateTime.parse(json['updated_at'].toString())
+            : DateTime.now(),
+        vehicleDetails: vehicleDetails,
       );
+
+      print('✅ Successfully parsed reservation: ${reservation.id}');
+      print('   Vehicle ID: ${reservation.vehicleId}');
+      print('   User ID: ${reservation.userId}');
+      print('   Dates: ${reservation.startDate} - ${reservation.endDate}');
+      print('   Status: ${reservation.status}');
+      print('   Amount: \$${reservation.totalAmount}');
+      
+      return reservation;
+    } catch (e, stackTrace) {
+      print('❌ Error parsing Reservation: $e');
+      print('📋 Stack trace: $stackTrace');
+      print('📋 Raw JSON: $json');
+      
+      // Return a minimal valid reservation object
+      return Reservation(
+        id: json['_id']?.toString() ?? 'error',
+        vehicleId: 'unknown',
+        userId: 'unknown',
+        startDate: DateTime.now(),
+        endDate: DateTime.now().add(const Duration(days: 1)),
+        status: 'error',
+        totalAmount: 0.0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
 
   Map<String, dynamic> toJson() => {
         "id": id,
