@@ -318,33 +318,79 @@ bool _isValidObjectId(String id) {
   return regex.hasMatch(id);
 }
   // Delete message
-  Future<bool> deleteMessage(String messageId) async {
-    try {
-      final success = await _repository.deleteMessage(messageId);
-
-      if (success) {
-        // Remove from local list
-        messages.removeWhere((msg) => msg.id == messageId);
-        Get.snackbar(
-          'Success',
-          'Message deleted',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
+// In ChatController - Update deleteMessage method to refresh messages after deletion
+Future<bool> deleteMessage(String messageId) async {
+  try {
+    print('\n🎮 ========== ATTEMPTING TO DELETE MESSAGE ==========');
+    print('🎮 Message ID to delete: $messageId');
+    
+    // Find the message in local list
+    final message = getMessageById(messageId);
+    if (message == null) {
+      print('❌ Message not found in local messages list');
+      Get.snackbar(
+        'Error',
+        'Message not found',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return false;
+    }
+    
+    // Check if user is the sender
+    if (!isCurrentUserSender(message)) {
+      print('❌ User is not the sender, cannot delete this message');
+      Get.snackbar(
+        'Not Allowed',
+        'You can only delete your own messages',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
+      return false;
+    }
+    
+    print('🔄 Calling repository.deleteMessage($messageId)');
+    
+    final success = await _repository.deleteMessage(messageId);
+    
+    if (success) {
+      print('✅ Repository returned success');
+      
+      // REFRESH THE MESSAGES FROM SERVER
+      if (currentConversationId.value.isNotEmpty) {
+        print('🔄 Refreshing messages from server...');
+        await fetchMessages(currentConversationId.value);
       }
-
-      return success;
-    } catch (e) {
-      print('❌ Error deleting message: $e');
+      
+      Get.snackbar(
+        'Success',
+        'Message deleted',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
+    } else {
+      print('❌ Repository returned failure');
       Get.snackbar(
         'Error',
         'Failed to delete message',
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
-      return false;
     }
+    
+    return success;
+  } catch (e) {
+    print('🔥 Error deleting message: $e');
+    Get.snackbar(
+      'Error',
+      'Failed to delete message: ${e.toString()}',
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+    );
+    return false;
   }
+}
 
   // Load more messages
   Future<void> loadMoreMessages() async {

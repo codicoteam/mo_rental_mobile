@@ -1,32 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import '../../../data/models/rate_plan/rate_plan_model.dart';
 import '../../../widgets/rate_plan_card/rate_plan_card.dart';
-import '../../auth/controllers/auth_controller.dart';
 import '../controllers/rate_plan_controller.dart';
 
-
-class RatePlansScreen extends StatelessWidget {
+class RatePlansScreen extends StatefulWidget {
   const RatePlansScreen({super.key});
 
   @override
-Widget build(BuildContext context) {
+  State<RatePlansScreen> createState() => _RatePlansScreenState();
+}
+
+class _RatePlansScreenState extends State<RatePlansScreen> {
   final RatePlanController controller = Get.find<RatePlanController>();
-  final AuthController authController = Get.find<AuthController>();
+  final GetStorage _storage = GetStorage();
+  final ScrollController _scrollController = ScrollController();
   
-  // Print user role info
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    authController.printUserRoleInfo();
-  });
-  
-  return Scaffold(
+  bool _isAdminOrManager() {
+    final userData = _storage.read('user_data') ?? {};
+    final roles = List<String>.from(userData['roles'] ?? []);
+    return roles.contains('admin') || roles.contains('manager');
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userData = _storage.read('user_data') ?? {};
+      final roles = List<String>.from(userData['roles'] ?? []);
+      print('👤 User Roles: $roles');
+      print('👤 Is Admin/Manager: ${_isAdminOrManager()}');
+      
+      // Ensure data is loaded if not already
+      if (controller.ratePlans.isEmpty && !controller.isLoading.value) {
+        controller.loadRatePlans();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
       appBar: AppBar(
         title: const Text('Rate Plans'),
         centerTitle: true,
         actions: [
+          // Add button for admin/manager users
+          if (controller.isAuthenticated && _isAdminOrManager())
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => Get.to(() => const AddEditRatePlanScreen()),
+            ),
           IconButton(
             icon: const Icon(Icons.filter_alt),
-            onPressed: () => Get.bottomSheet(FilterBottomSheet()),
+            onPressed: () => Get.bottomSheet(const FilterBottomSheet()),
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -35,7 +63,64 @@ Widget build(BuildContext context) {
         ],
       ),
       body: Obx(() {
-        // Use Obx at the top level to observe all reactive variables
+        // Show loading indicator when loading and no data
+        if (controller.isLoading.value && controller.ratePlans.isEmpty) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        // Show error message if there's an error and no data
+        if (controller.errorMessage.value.isNotEmpty && controller.ratePlans.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  controller.errorMessage.value,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16, color: Colors.red),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: controller.loadRatePlans,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Show empty state if no data
+        if (controller.filteredPlans.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.money_off, size: 60, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text(
+                  'No rate plans found',
+                  style: TextStyle(fontSize: 18, color: Colors.grey),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Try adjusting your filters',
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: controller.loadRatePlans,
+                  child: const Text('Refresh'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Main content with rate plans
         return Column(
           children: [
             // Search Bar
@@ -55,7 +140,7 @@ Widget build(BuildContext context) {
                 ),
               ),
             ),
-            
+
             // Filters Summary
             if (controller.selectedVehicleClass.value.isNotEmpty ||
                 controller.selectedCurrency.value != 'USD' ||
@@ -107,119 +192,62 @@ Widget build(BuildContext context) {
                   ],
                 ),
               ),
-            
-            // Loading Indicator
-            if (controller.isLoading.value && controller.ratePlans.isEmpty)
-              const Expanded(
-                child: Center(
-                  child: CircularProgressIndicator(),
-                ),
-              ),
-            
-            // Error Message
-            if (controller.errorMessage.value.isNotEmpty && controller.ratePlans.isEmpty)
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 60, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text(
-                        controller.errorMessage.value,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 16, color: Colors.red),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: controller.loadRatePlans,
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            
-            // Empty State
-            if (!controller.isLoading.value &&
-                controller.errorMessage.value.isEmpty &&
-                controller.filteredPlans.isEmpty)
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.money_off, size: 60, color: Colors.grey),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No rate plans found',
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Try adjusting your filters',
-                        style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            
-            // Rate Plans List - USE IMPORTED WIDGET HERE
-            if (controller.filteredPlans.isNotEmpty)
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async => await controller.loadRatePlans(),
-                  child: ListView.builder(
-                    itemCount: controller.filteredPlans.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index < controller.filteredPlans.length) {
-                        final plan = controller.filteredPlans[index];
-                        return RatePlanCard(plan: plan); // Using imported widget
-                      } else {
-                        // Load more indicator
-                        if (controller.currentPage.value < controller.totalPages.value) {
-                          controller.loadMore();
-                          return const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          );
-                        }
-                        return const SizedBox();
+
+            // Rate Plans List
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async => await controller.loadRatePlans(),
+                child: ListView.builder(
+                  controller: _scrollController,
+                  itemCount: controller.filteredPlans.length + 1,
+                  itemBuilder: (context, index) {
+                    if (index < controller.filteredPlans.length) {
+                      final plan = controller.filteredPlans[index];
+                      return RatePlanCard(plan: plan);
+                    } else {
+                      // Load more indicator
+                      if (controller.currentPage.value < controller.totalPages.value) {
+                        controller.loadMore();
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
                       }
-                    },
-                  ),
+                      return const SizedBox(height: 16);
+                    }
+                  },
                 ),
               ),
-            
+            ),
+
             // Stats
-            if (controller.filteredPlans.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  border: Border(top: BorderSide(color: Colors.grey.shade300)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Showing ${controller.filteredPlans.length} of ${controller.totalItems.value} plans',
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                    Text(
-                      'Page ${controller.currentPage.value} of ${controller.totalPages.value}',
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ],
-                ),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                border: Border(top: BorderSide(color: Colors.grey.shade300)),
               ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Showing ${controller.filteredPlans.length} of ${controller.totalItems.value} plans',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  Text(
+                    'Page ${controller.currentPage.value} of ${controller.totalPages.value}',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
           ],
         );
       }),
-      floatingActionButton: controller.isAuthenticated
+      // Simple FAB without complex logic
+      floatingActionButton: controller.isAuthenticated && _isAdminOrManager()
           ? FloatingActionButton(
               onPressed: () => Get.to(() => const AddEditRatePlanScreen()),
               child: const Icon(Icons.add),
@@ -241,7 +269,6 @@ Widget build(BuildContext context) {
   }
 }
 
-// REMOVE the old RatePlanCard class from this file since we imported it
 
 class FilterBottomSheet extends StatelessWidget {
   const FilterBottomSheet({super.key});
@@ -269,26 +296,28 @@ class FilterBottomSheet extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
-          
+
           // Vehicle Class
-          const Text('Vehicle Class', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Vehicle Class',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: controller.vehicleClasses.map((cls) {
               return Obx(() => ChoiceChip(
-                label: Text(cls.toUpperCase()),
-                selected: controller.selectedVehicleClass.value == cls,
-                onSelected: (selected) {
-                  controller.selectedVehicleClass.value = selected ? cls : '';
-                },
-              ));
+                    label: Text(cls.toUpperCase()),
+                    selected: controller.selectedVehicleClass.value == cls,
+                    onSelected: (selected) {
+                      controller.selectedVehicleClass.value =
+                          selected ? cls : '';
+                    },
+                  ));
             }).toList(),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Currency
           const Text('Currency', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
@@ -296,26 +325,27 @@ class FilterBottomSheet extends StatelessWidget {
             spacing: 8,
             children: controller.currencies.map((curr) {
               return Obx(() => ChoiceChip(
-                label: Text(curr),
-                selected: controller.selectedCurrency.value == curr,
-                onSelected: (selected) {
-                  controller.selectedCurrency.value = selected ? curr : 'USD';
-                },
-              ));
+                    label: Text(curr),
+                    selected: controller.selectedCurrency.value == curr,
+                    onSelected: (selected) {
+                      controller.selectedCurrency.value =
+                          selected ? curr : 'USD';
+                    },
+                  ));
             }).toList(),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Active Only
           Obx(() => SwitchListTile(
-            title: const Text('Show Active Plans Only'),
-            value: controller.showActiveOnly.value,
-            onChanged: (value) => controller.showActiveOnly.value = value,
-          )),
-          
+                title: const Text('Show Active Plans Only'),
+                value: controller.showActiveOnly.value,
+                onChanged: (value) => controller.showActiveOnly.value = value,
+              )),
+
           const SizedBox(height: 30),
-          
+
           Row(
             children: [
               Expanded(
@@ -352,33 +382,30 @@ class AddEditRatePlanScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isEdit = plan != null;
     final controller = Get.find<RatePlanController>();
-    
+
     final nameController = TextEditingController(text: plan?.name ?? '');
     final notesController = TextEditingController(text: plan?.notes ?? '');
-    final dailyRateController = TextEditingController(
-      text: plan?.dailyRate.toString() ?? '0.0'
-    );
-    final weeklyRateController = TextEditingController(
-      text: plan?.weeklyRate.toString() ?? '0.0'
-    );
-    final monthlyRateController = TextEditingController(
-      text: plan?.monthlyRate.toString() ?? '0.0'
-    );
-    final weekendRateController = TextEditingController(
-      text: plan?.weekendRate.toString() ?? '0.0'
-    );
-    
+    final dailyRateController =
+        TextEditingController(text: plan?.dailyRate.toString() ?? '0.0');
+    final weeklyRateController =
+        TextEditingController(text: plan?.weeklyRate.toString() ?? '0.0');
+    final monthlyRateController =
+        TextEditingController(text: plan?.monthlyRate.toString() ?? '0.0');
+    final weekendRateController =
+        TextEditingController(text: plan?.weekendRate.toString() ?? '0.0');
+
     // For validity dates
     final validFromController = TextEditingController(
-      text: plan?.validFrom != null 
-          ? '${plan!.validFrom.year}-${plan!.validFrom.month.toString().padLeft(2, '0')}-${plan!.validFrom.day.toString().padLeft(2, '0')}'
-          : DateTime.now().toString().split(' ')[0]
-    );
+        text: plan?.validFrom != null
+            ? '${plan!.validFrom.year}-${plan!.validFrom.month.toString().padLeft(2, '0')}-${plan!.validFrom.day.toString().padLeft(2, '0')}'
+            : DateTime.now().toString().split(' ')[0]);
     final validToController = TextEditingController(
-      text: plan?.validTo != null 
-          ? '${plan!.validTo.year}-${plan!.validTo.month.toString().padLeft(2, '0')}-${plan!.validTo.day.toString().padLeft(2, '0')}'
-          : DateTime.now().add(const Duration(days: 365)).toString().split(' ')[0]
-    );
+        text: plan?.validTo != null
+            ? '${plan!.validTo.year}-${plan!.validTo.month.toString().padLeft(2, '0')}-${plan!.validTo.day.toString().padLeft(2, '0')}'
+            : DateTime.now()
+                .add(const Duration(days: 365))
+                .toString()
+                .split(' ')[0]);
 
     return Scaffold(
       appBar: AppBar(
@@ -398,7 +425,7 @@ class AddEditRatePlanScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             TextFormField(
               controller: notesController,
               maxLines: 3,
@@ -408,43 +435,47 @@ class AddEditRatePlanScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            
-            const Text('Vehicle Class*', style: TextStyle(fontWeight: FontWeight.bold)),
+
+            const Text('Vehicle Class*',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Obx(() => Wrap(
-              spacing: 8,
-              children: controller.vehicleClasses.map((cls) {
-                return ChoiceChip(
-                  label: Text(cls.toUpperCase()),
-                  selected: controller.selectedVehicleClass.value == cls,
-                  onSelected: (selected) {
-                    controller.selectedVehicleClass.value = selected ? cls : '';
-                  },
-                );
-              }).toList(),
-            )),
-            
+                  spacing: 8,
+                  children: controller.vehicleClasses.map((cls) {
+                    return ChoiceChip(
+                      label: Text(cls.toUpperCase()),
+                      selected: controller.selectedVehicleClass.value == cls,
+                      onSelected: (selected) {
+                        controller.selectedVehicleClass.value =
+                            selected ? cls : '';
+                      },
+                    );
+                  }).toList(),
+                )),
+
             const SizedBox(height: 20),
-            
-            const Text('Currency*', style: TextStyle(fontWeight: FontWeight.bold)),
+
+            const Text('Currency*',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Obx(() => Wrap(
-              spacing: 8,
-              children: controller.currencies.map((curr) {
-                return ChoiceChip(
-                  label: Text(curr),
-                  selected: controller.selectedCurrency.value == curr,
-                  onSelected: (selected) {
-                    controller.selectedCurrency.value = selected ? curr : 'USD';
-                  },
-                );
-              }).toList(),
-            )),
-            
+                  spacing: 8,
+                  children: controller.currencies.map((curr) {
+                    return ChoiceChip(
+                      label: Text(curr),
+                      selected: controller.selectedCurrency.value == curr,
+                      onSelected: (selected) {
+                        controller.selectedCurrency.value =
+                            selected ? curr : 'USD';
+                      },
+                    );
+                  }).toList(),
+                )),
+
             const SizedBox(height: 20),
             const Text('Rates*', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            
+
             // Daily Rate
             TextFormField(
               controller: dailyRateController,
@@ -456,7 +487,7 @@ class AddEditRatePlanScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Weekly Rate
             TextFormField(
               controller: weeklyRateController,
@@ -468,7 +499,7 @@ class AddEditRatePlanScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Monthly Rate
             TextFormField(
               controller: monthlyRateController,
@@ -480,7 +511,7 @@ class AddEditRatePlanScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Weekend Rate
             TextFormField(
               controller: weekendRateController,
@@ -491,11 +522,12 @@ class AddEditRatePlanScreen extends StatelessWidget {
                 prefixText: '\$ ',
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            const Text('Validity Period*', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Validity Period*',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            
+
             Row(
               children: [
                 Expanded(
@@ -514,8 +546,8 @@ class AddEditRatePlanScreen extends StatelessWidget {
                         lastDate: DateTime(2100),
                       );
                       if (date != null) {
-                        validFromController.text = 
-                          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                        validFromController.text =
+                            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
                       }
                     },
                   ),
@@ -532,76 +564,89 @@ class AddEditRatePlanScreen extends StatelessWidget {
                     onTap: () async {
                       final date = await showDatePicker(
                         context: context,
-                        initialDate: DateTime.now().add(const Duration(days: 365)),
+                        initialDate:
+                            DateTime.now().add(const Duration(days: 365)),
                         firstDate: DateTime.now(),
                         lastDate: DateTime(2100),
                       );
                       if (date != null) {
-                        validToController.text = 
-                          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                        validToController.text =
+                            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
                       }
                     },
                   ),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             Obx(() => SwitchListTile(
-              title: const Text('Active Plan'),
-              value: controller.showActiveOnly.value,
-              onChanged: (value) => controller.showActiveOnly.value = value,
-            )),
-            
+                  title: const Text('Active Plan'),
+                  value: controller.showActiveOnly.value,
+                  onChanged: (value) => controller.showActiveOnly.value = value,
+                )),
+
             const SizedBox(height: 30),
-            
+
             ElevatedButton(
               onPressed: () async {
                 // Validate required fields
                 if (nameController.text.isEmpty) {
-                  Get.snackbar('Error', 'Plan name is required', backgroundColor: Colors.red);
+                  Get.snackbar('Error', 'Plan name is required',
+                      backgroundColor: Colors.red);
                   return;
                 }
-                
+
                 if (controller.selectedVehicleClass.value.isEmpty) {
-                  Get.snackbar('Error', 'Vehicle class is required', backgroundColor: Colors.red);
+                  Get.snackbar('Error', 'Vehicle class is required',
+                      backgroundColor: Colors.red);
                   return;
                 }
-                
+
                 // Create data object matching your API
                 final data = {
                   'name': nameController.text,
                   'notes': notesController.text,
                   'vehicle_class': controller.selectedVehicleClass.value,
                   'currency': controller.selectedCurrency.value,
-                  'daily_rate': double.parse(dailyRateController.text.isEmpty ? '0' : dailyRateController.text),
-                  'weekly_rate': double.parse(weeklyRateController.text.isEmpty ? '0' : weeklyRateController.text),
-                  'monthly_rate': double.parse(monthlyRateController.text.isEmpty ? '0' : monthlyRateController.text),
-                  'weekend_rate': double.parse(weekendRateController.text.isEmpty ? '0' : weekendRateController.text),
+                  'daily_rate': double.parse(dailyRateController.text.isEmpty
+                      ? '0'
+                      : dailyRateController.text),
+                  'weekly_rate': double.parse(weeklyRateController.text.isEmpty
+                      ? '0'
+                      : weeklyRateController.text),
+                  'monthly_rate': double.parse(
+                      monthlyRateController.text.isEmpty
+                          ? '0'
+                          : monthlyRateController.text),
+                  'weekend_rate': double.parse(
+                      weekendRateController.text.isEmpty
+                          ? '0'
+                          : weekendRateController.text),
                   'valid_from': validFromController.text,
                   'valid_to': validToController.text,
                   'active': controller.showActiveOnly.value,
                 };
-                
+
                 // Optional: Add branch_id if you have branch selection
                 if (controller.selectedBranch.value.isNotEmpty) {
                   data['branch_id'] = controller.selectedBranch.value;
                 }
-                
+
                 print('📦 Rate Plan Data: $data');
-                
+
                 if (isEdit) {
                   await controller.updatePlan(plan!.id, data);
                 } else {
                   await controller.createPlan(data);
                 }
-                
+
                 Get.back();
               },
               child: Text(isEdit ? 'Update Plan' : 'Create Plan'),
             ),
-            
+
             const SizedBox(height: 20),
           ],
         ),

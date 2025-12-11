@@ -240,97 +240,130 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       ),
     );
   }
+// In ChatDetailScreen - UPDATED message bubble builder
+Widget _buildMessageBubble(ChatMessage message) {
+  final isMe = _controller.isCurrentUserSender(message);
+  final isRead = message.isReadByCurrentUser;
+  final hasAttachments = message.attachments != null && message.attachments!.isNotEmpty;
+  final isDeleted = message.isDeleted;
+  final hasContent = message.content.isNotEmpty;
+  
+  // Check if message is deletable (only sender can delete their own messages that aren't already deleted)
+  final isDeletable = isMe && !isDeleted && hasContent;
 
-  Widget _buildMessageBubble(ChatMessage message) {
-    final isMe = _controller.isCurrentUserSender(message);
-    final isRead = message.isReadByCurrentUser;
-    final hasAttachments = message.attachments != null && message.attachments!.isNotEmpty;
-    
-    // Check if message is deletable (only sender can delete their own messages)
-    final isDeletable = isMe && !message.isDeleted;
-
-    return GestureDetector(
-      onLongPress: isDeletable ? () {
-  _showDeleteConfirmationDialog(message);
-} : null,
-      onTap: () {
-        // Mark message as read if it's not from current user and not already read
-        if (!isMe && !isRead) {
-          _controller.markMessageAsRead(message.id); // Use message.id, not conversation.id
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (!isMe)
-              const CircleAvatar(
-                radius: 16,
-                backgroundColor: Colors.grey,
-                child: Icon(Icons.person, size: 16, color: Colors.white),
-              ),
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.7,
-              ),
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isMe ? Colors.blue : Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (hasAttachments) ...[
-                      _buildAttachments(message.attachments!),
-                      const SizedBox(height: 8),
-                    ],
-                    Text(
-                      message.content,
-                      style: TextStyle(
-                        color: isMe ? Colors.white : Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _formatMessageTime(message.createdAt),
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: isMe ? Colors.white70 : Colors.grey,
-                          ),
-                        ),
-                        if (isMe) ...[
-                          const SizedBox(width: 4),
-                          Icon(
-                            isRead ? Icons.done_all : Icons.done,
-                            size: 12,
-                            color: isRead ? Colors.blue.shade200 : Colors.white70,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (isMe)
-              const CircleAvatar(
-                radius: 16,
-                backgroundColor: Colors.blue,
-                child: Icon(Icons.person, size: 16, color: Colors.white),
-              ),
-          ],
+  // If message is deleted and has no content, show a different UI
+  if (isDeleted && !hasContent) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      alignment: Alignment.center,
+      child: Text(
+        'This message was deleted',
+        style: TextStyle(
+          fontSize: 12,
+          color: Colors.grey.shade600,
+          fontStyle: FontStyle.italic,
         ),
       ),
     );
   }
+
+  return GestureDetector(
+    onLongPress: isDeletable ? () {
+      _showDeleteConfirmationDialog(message);
+    } : null,
+    onTap: () {
+      // Mark message as read if it's not from current user and not already read
+      if (!isMe && !isRead) {
+        _controller.markMessageAsRead(message.id);
+      }
+    },
+    child: Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isMe)
+            const CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.grey,
+              child: Icon(Icons.person, size: 16, color: Colors.white),
+            ),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.7,
+            ),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDeleted 
+                  ? Colors.grey.shade300  // Grey background for deleted messages
+                  : isMe 
+                    ? Colors.blue 
+                    : Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (hasAttachments) ...[
+                    _buildAttachments(message.attachments!),
+                    const SizedBox(height: 8),
+                  ],
+                  Text(
+                    isDeleted 
+                      ? 'This message was deleted'  // Show deletion message
+                      : message.content,  // Show normal content
+                    style: TextStyle(
+                      color: isDeleted 
+                        ? Colors.grey.shade600  // Grey text for deleted
+                        : isMe 
+                          ? Colors.white 
+                          : Colors.black,
+                      fontStyle: isDeleted ? FontStyle.italic : FontStyle.normal,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _formatMessageTime(message.createdAt),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isDeleted 
+                            ? Colors.grey.shade500 
+                            : isMe 
+                              ? Colors.white70 
+                              : Colors.grey,
+                        ),
+                      ),
+                      if (isMe && !isDeleted) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          isRead ? Icons.done_all : Icons.done,
+                          size: 12,
+                          color: isRead ? Colors.blue.shade200 : Colors.white70,
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isMe)
+            const CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.blue,
+              child: Icon(Icons.person, size: 16, color: Colors.white),
+            ),
+        ],
+      ),
+    ),
+  );
+}
 
   Widget _buildAttachments(List<Attachment> attachments) {
     return Column(
@@ -466,24 +499,47 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     );
   }
 
-  void _showDeleteConfirmationDialog(ChatMessage message) {
+ // In ChatDetailScreen class - FIXED delete dialog
+void _showDeleteConfirmationDialog(ChatMessage message) {
   showDialog(
     context: context,
     builder: (context) {
       return AlertDialog(
         title: const Text('Delete Message'),
-        content: const Text('Are you sure you want to delete this message?'),
+        content: const Text('Are you sure you want to delete this message? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Get.back();
-              _controller.deleteMessage(message.id);
+              
+              // Show loading indicator
+              Get.dialog(
+                const Center(
+                  child: CircularProgressIndicator(),
+                ),
+                barrierDismissible: false,
+              );
+              
+              // Call delete with the CORRECT message ID (not conversation ID)
+              final success = await _controller.deleteMessage(message.id);
+              
+              // Close loading dialog
+              Get.back();
+              
+              if (!success) {
+                Get.snackbar(
+                  'Delete Failed',
+                  'Could not delete the message',
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
+                );
+              }
             },
-            child: const Text('Delete'),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       );

@@ -5,6 +5,7 @@ import '../../domain/repositories/vehicle_model_repository.dart';
 import '../../domain/repositories/vehicle_repository.dart';
 import '../bindings/app_bindings.dart';
 import '../features/data/models/branch_models/branch_models.dart';
+import '../features/modules/auth/views/forgot_password_screen.dart';
 import '../features/modules/auth/views/login_screen.dart';
 import '../features/modules/auth/views/register_screen.dart';
 import '../features/modules/auth/views/verify_email_screen.dart';
@@ -22,6 +23,7 @@ import '../features/modules/drivers/controllers/driver_profile_controller.dart';
 import '../features/modules/drivers/views/driver_profile_form_screen.dart';
 import '../features/modules/drivers/views/my_driver_profile_screen.dart';
 import '../features/modules/drivers/views/public_drivers_screen.dart';
+import '../features/modules/profile/views/delete_account_screen.dart';
 import '../features/modules/profile/views/edit_profile_screen.dart'; // ADD THIS IMPORT
 import '../features/modules/profile/views/profile_screen.dart'; // ADD THIS IMPORT
 import '../features/modules/rate_plans/views/rate_plans_screen.dart';
@@ -209,6 +211,16 @@ class AppPages {
     GetPage(
       name: AppRoutes.editProfile,
       page: () => const EditProfileScreen(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.deleteAccount,
+      page: () => const DeleteAccountScreen(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.forgotPassword,
+      page: () => const ForgotPasswordScreen(),
       binding: AuthBinding(),
     ),
   ];

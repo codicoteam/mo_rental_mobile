@@ -8,6 +8,7 @@ abstract class AppRoutes {
   static const login = '/login';
   static const register = '/register';
   static const verifyEmail = '/verify-email';
+  static const forgotPassword = '/forgot-password';
   
   // Main app screens
   static const home = '/home';
@@ -18,6 +19,7 @@ abstract class AppRoutes {
   // Profile screens - ADD THESE
   static const profile = '/profile';
   static const editProfile = '/edit-profile';
+  static const deleteAccount = '/profile/delete-account';
 
   // Reservation screens
   static const checkAvailability = '/reservations/availability';
