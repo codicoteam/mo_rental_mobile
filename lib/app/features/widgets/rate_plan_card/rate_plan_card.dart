@@ -163,7 +163,7 @@ class RatePlanCard extends StatelessWidget {
                     ],
                   ),
                 );
-              }).toList(),
+              }),
             ],
             
             // Taxes & Fees

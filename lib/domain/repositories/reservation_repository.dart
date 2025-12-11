@@ -210,14 +210,17 @@ Future<List<Reservation>> getReservations({
             return [];
           }
           
-          final reservations = reservationsJson.map((json) {
-            try {
-              return Reservation.fromJson(json);
-            } catch (e) {
-              print('⚠️ Error parsing reservation: $e');
-              return null;
-            }
-          }).whereType<Reservation>().toList();
+         final reservations = reservationsJson.map((json) {
+  try {
+    print('🔄 Parsing reservation JSON...');
+    return Reservation.fromJson(json);
+  } catch (e, stackTrace) {
+    print('❌ Error parsing reservation: $e');
+    print('📋 Stack trace: $stackTrace');
+    print('📋 Problematic JSON: $json');
+    return null;
+  }
+}).whereType<Reservation>().toList();
           
           print('✅ Successfully fetched ${reservations.length} reservation(s)');
           return reservations;

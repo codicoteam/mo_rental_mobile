@@ -147,32 +147,47 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
   }
 
   void _selectVehicle(Map<String, dynamic> vehicle) {
-    if (widget.isSelectionMode) {
-      // Extract vehicle_model_id from vehicle or vehicle_model
-      String? vehicleModelId;
-      
-      if (vehicle['vehicle_model_id'] != null) {
+
+    print('🚗 Selected vehicle: ${vehicle['_id']}');
+  print('📋 vehicle_model_id type: ${vehicle['vehicle_model_id']?.runtimeType}');
+  print('📋 vehicle_model_id value: ${vehicle['vehicle_model_id']}');
+  print('📋 vehicle_model type: ${vehicle['vehicle_model']?.runtimeType}');
+  print('📋 vehicle_model value: ${vehicle['vehicle_model']}');
+    
+  if (widget.isSelectionMode) {
+    // Extract vehicle_model_id from vehicle or vehicle_model
+    String? vehicleModelId;
+    
+    if (vehicle['vehicle_model_id'] != null) {
+      // Check if it's a string or an object
+      if (vehicle['vehicle_model_id'] is String) {
         vehicleModelId = vehicle['vehicle_model_id'].toString();
-      } else if (vehicle['vehicle_model'] != null) {
-        vehicleModelId = vehicle['vehicle_model']['_id']?.toString() ?? 
-                        vehicle['vehicle_model']['id']?.toString();
+      } else if (vehicle['vehicle_model_id'] is Map) {
+        // Extract _id from the vehicle_model_id object
+        final modelObj = vehicle['vehicle_model_id'] as Map<String, dynamic>;
+        vehicleModelId = modelObj['_id']?.toString();
       }
-      
-      // Return selected vehicle data
-      Get.back(result: {
-        'vehicleId': vehicle['_id'] ?? vehicle['id'],
-        'vehicleName': _getVehicleName(vehicle),
-        'dailyRate': _getDailyRate(vehicle),
-        'vehicleModelId': vehicleModelId ?? 'unknown',
-      });
-    } else {
-      // Show vehicle details
-      Get.toNamed(
-        '/vehicle-detail',
-        arguments: vehicle,
-      );
+    } else if (vehicle['vehicle_model'] != null) {
+      // Extract from vehicle_model object
+      final modelObj = vehicle['vehicle_model'] as Map<String, dynamic>;
+      vehicleModelId = modelObj['_id']?.toString() ?? modelObj['id']?.toString();
     }
+    
+    // Return selected vehicle data
+    Get.back(result: {
+      'vehicleId': vehicle['_id'] ?? vehicle['id'],
+      'vehicleName': _getVehicleName(vehicle),
+      'dailyRate': _getDailyRate(vehicle),
+      'vehicleModelId': vehicleModelId ?? 'unknown',
+    });
+  } else {
+    // Show vehicle details
+    Get.toNamed(
+      '/vehicle-detail',
+      arguments: vehicle,
+    );
   }
+}
 
   String _getVehicleName(Map<String, dynamic> vehicle) {
     final vehicleModel = vehicle['vehicle_model'] ?? {};
@@ -191,45 +206,58 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
   }
 
   double _getDailyRate(Map<String, dynamic> vehicle) {
-    final vehicleModel = vehicle['vehicle_model'] ?? {};
-    
-    // Try different possible rate fields
+  // Check if vehicle_model_id is an object or vehicle_model exists
+  dynamic vehicleModel;
+  
+  if (vehicle['vehicle_model'] != null) {
+    vehicleModel = vehicle['vehicle_model'];
+  } else if (vehicle['vehicle_model_id'] != null && vehicle['vehicle_model_id'] is Map) {
+    vehicleModel = vehicle['vehicle_model_id'];
+  }
+  
+  if (vehicleModel is Map<String, dynamic>) {
+    // Try different possible rate fields from the vehicle model object
     if (vehicleModel['daily_rate'] is num) {
       return vehicleModel['daily_rate'].toDouble();
     }
-    
-    if (vehicle['daily_rate'] is num) {
-      return vehicle['daily_rate'].toDouble();
-    }
-    
-    if (vehicle['rate_per_day'] is num) {
-      return vehicle['rate_per_day'].toDouble();
-    }
-    
-    if (vehicle['price_per_day'] is num) {
-      return vehicle['price_per_day'].toDouble();
-    }
-
-    // Default rates based on vehicle class
-    final vehicleClass = (vehicleModel['class'] ?? 
-                         vehicle['vehicle_class'] ?? 
-                         '').toString().toLowerCase();
-
-    switch (vehicleClass) {
-      case 'economy':
-        return 30.0;
-      case 'compact':
-        return 40.0;
-      case 'standard':
-        return 50.0;
-      case 'luxury':
-        return 80.0;
-      case 'suv':
-        return 70.0;
-      default:
-        return 50.0;
-    }
   }
+  
+  // Try vehicle-level rate fields
+  if (vehicle['daily_rate'] is num) {
+    return vehicle['daily_rate'].toDouble();
+  }
+  
+  if (vehicle['rate_per_day'] is num) {
+    return vehicle['rate_per_day'].toDouble();
+  }
+  
+  if (vehicle['price_per_day'] is num) {
+    return vehicle['price_per_day'].toDouble();
+  }
+
+  // Default rates based on vehicle class
+  String vehicleClass = '';
+  if (vehicleModel is Map<String, dynamic>) {
+    vehicleClass = (vehicleModel['class'] ?? '').toString().toLowerCase();
+  } else {
+    vehicleClass = (vehicle['vehicle_class'] ?? '').toString().toLowerCase();
+  }
+
+  switch (vehicleClass) {
+    case 'economy':
+      return 30.0;
+    case 'compact':
+      return 40.0;
+    case 'standard':
+      return 50.0;
+    case 'luxury':
+      return 80.0;
+    case 'suv':
+      return 70.0;
+    default:
+      return 50.0;
+  }
+}
 
   Widget _buildVehicleCard(int index) {
     final vehicle = _vehicles[index] as Map<String, dynamic>;
