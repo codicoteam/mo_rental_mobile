@@ -164,80 +164,79 @@ class _SidebarWidgetState extends State<SidebarWidget>
   }
 
   void _handleNavigation(SidebarItem item) {
-  try {
-    switch (item.route) {
-      case '/reservations/list':
-        Get.toNamed(AppRoutes.reservationList);
-        break;
-      case '/reservations/detail':
-        // This would be called with arguments from a specific reservation
-        Get.toNamed(AppRoutes.reservationDetail);
-        break;
-      case '/reservations/availability':
-        Get.toNamed(AppRoutes.checkAvailability);
-        break;
-      case '/reservations/create':
-        Get.toNamed(AppRoutes.createReservation);
-        break;
-      case '/promo-codes':
-        Get.toNamed(AppRoutes.promoCodes);
-        break;
-      case '/chat/conversations':
-        Get.toNamed(AppRoutes.chatConversations);
-        break;
-      case '/home':
-        Get.offAllNamed('/');
-        break;
-      case '/branches':
-        Get.toNamed(AppRoutes.branches);
-        break;
-      case '/branches/nearby':
-        Get.toNamed(AppRoutes.nearbyBranches);
-        break;
-      case '/vehicles/models':
-        Get.toNamed(AppRoutes.vehicleModels);
-        break;
-      case '/vehicles/fleet':
-        Get.toNamed(AppRoutes.vehicleFleet);
-        break;
-      case '/drivers/public':
-        Get.toNamed(AppRoutes.publicDrivers);
-        break;
-      case '/drivers/my-profile':
-        Get.toNamed(AppRoutes.myDriverProfile);
-        break;
-      case '/favorites':
-      case '/history':
-      case '/payments':
-      case '/settings':
-      case '/support':
-        Get.snackbar(
-          'Coming Soon',
-          '${item.title} feature is under development',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 2),
-        );
-        break;
-      default:
-        debugPrint('Route not handled: ${item.route}');
-        Get.snackbar(
-          'Coming Soon',
-          '${item.title} feature is under development',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 2),
-        );
+    try {
+      switch (item.route) {
+        case '/reservations/list':
+          Get.toNamed(AppRoutes.reservationList);
+          break;
+        case '/reservations/detail':
+          Get.toNamed(AppRoutes.reservationDetail);
+          break;
+        case '/reservations/availability':
+          Get.toNamed(AppRoutes.checkAvailability);
+          break;
+        case '/reservations/create':
+          Get.toNamed(AppRoutes.createReservation);
+          break;
+        case '/promo-codes':
+          Get.toNamed(AppRoutes.promoCodes);
+          break;
+        case '/chat/conversations':
+          Get.toNamed(AppRoutes.chatConversations);
+          break;
+        case '/home':
+          Get.offAllNamed('/');
+          break;
+        case '/branches':
+          Get.toNamed(AppRoutes.branches);
+          break;
+        case '/branches/nearby':
+          Get.toNamed(AppRoutes.nearbyBranches);
+          break;
+        case '/vehicles/models':
+          Get.toNamed(AppRoutes.vehicleModels);
+          break;
+        case '/vehicles/fleet':
+          Get.toNamed(AppRoutes.vehicleFleet);
+          break;
+        case '/drivers/public':
+          Get.toNamed(AppRoutes.publicDrivers);
+          break;
+        case '/drivers/my-profile':
+          Get.toNamed(AppRoutes.myDriverProfile);
+          break;
+        case '/favorites':
+        case '/history':
+        case '/payments':
+        case '/settings':
+        case '/support':
+          Get.snackbar(
+            'Coming Soon',
+            '${item.title} feature is under development',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: const Duration(seconds: 2),
+          );
+          break;
+        default:
+          debugPrint('Route not handled: ${item.route}');
+          Get.snackbar(
+            'Coming Soon',
+            '${item.title} feature is under development',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: const Duration(seconds: 2),
+          );
+      }
+    } catch (e) {
+      debugPrint('❌ Navigation error for ${item.route}: $e');
+      Get.snackbar(
+        'Navigation Error',
+        'Could not load ${item.title}',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
     }
-  } catch (e) {
-    debugPrint('❌ Navigation error for ${item.route}: $e');
-    Get.snackbar(
-      'Navigation Error',
-      'Could not load ${item.title}',
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 3),
-    );
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -245,20 +244,14 @@ class _SidebarWidgetState extends State<SidebarWidget>
     final userName = userData['full_name'] ?? 'Guest';
     final userEmail = userData['email'] ?? 'guest@example.com';
 
-    // Get colors from theme
-    final colorScheme = Theme.of(context).colorScheme;
-    final primaryColor = colorScheme.primary;
-    final surfaceColor = colorScheme.surface;
-    final onSurfaceColor = colorScheme.onSurface;
-    final secondaryColor = colorScheme.secondary;
-
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
           // Main content
           Positioned.fill(
             child: Container(
-              color: Colors.white, // White background
+              color: Colors.white,
               child: widget.child,
             ),
           ),
@@ -271,126 +264,137 @@ class _SidebarWidgetState extends State<SidebarWidget>
                 animation: _animation,
                 builder: (context, child) {
                   return Container(
-                    color: Colors.black.withOpacity(0.6 * _animation.value),
+                    color: Colors.black.withOpacity(0.65 * _animation.value),
                   );
                 },
               ),
             ),
 
-          // Sidebar - Everything scrollable
+          // Premium Sidebar
           AnimatedBuilder(
             animation: _animation,
             builder: (context, child) {
               return Transform.translate(
-                offset: Offset(-300 * (1 - _animation.value), 0),
+                offset: Offset(-320 * (1 - _animation.value), 0),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Container(
-                    width: 300,
+                    width: 320,
                     height: double.infinity,
                     decoration: BoxDecoration(
-                      color: surfaceColor, // Use theme surface color
+                      color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: primaryColor.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(4, 0),
+                          color: Color(0xFF047BC1).withOpacity(0.15),
+                          blurRadius: 30,
+                          spreadRadius: 0,
+                          offset: const Offset(8, 0),
                         ),
                       ],
                     ),
                     child: Column(
                       children: [
-                        // Menu Items with scroll - including header
+                        // Scrollable Content
                         Expanded(
                           child: SingleChildScrollView(
                             child: Column(
                               children: [
-                                // Header (moved here to be scrollable)
+                                // Premium Header with Gradient
                                 Container(
-                                  padding: const EdgeInsets.only(
-                                    top: 20,
-                                    left: 20,
-                                    right: 20,
-                                    bottom: 24,
+                                  padding: EdgeInsets.only(
+                                    top: MediaQuery.of(context).padding.top + 24,
+                                    left: 24,
+                                    right: 24,
+                                    bottom: 28,
                                   ),
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
-                                        primaryColor,
-                                        secondaryColor,
-                                        primaryColor.withOpacity(0.8),
+                                        Color(0xFF047BC1),
+                                        Color(0xFF4F46E5),
+                                        Color(0xFF3730A3),
                                       ],
                                     ),
                                   ),
                                   child: Column(
                                     children: [
+                                      // Avatar with Premium Ring
                                       Container(
+                                        padding: EdgeInsets.all(4),
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Colors.white.withOpacity(0.9),
+                                              Colors.white.withOpacity(0.4),
+                                            ],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color:
-                                                  primaryColor.withOpacity(0.3),
-                                              blurRadius: 10,
+                                              color: Colors.white.withOpacity(0.4),
+                                              blurRadius: 16,
                                               spreadRadius: 2,
                                             ),
                                           ],
                                         ),
-                                        child: CircleAvatar(
-                                          radius: 38,
-                                          backgroundColor:
-                                              Colors.white.withOpacity(0.9),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.white,
+                                          ),
                                           child: CircleAvatar(
-                                            radius: 35,
+                                            radius: 42,
                                             backgroundColor: Colors.white,
                                             child: Text(
                                               userName[0].toUpperCase(),
                                               style: TextStyle(
-                                                fontSize: 28,
+                                                fontSize: 32,
                                                 fontWeight: FontWeight.bold,
-                                                color: primaryColor,
+                                                color: Color(0xFF047BC1),
                                               ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 18),
                                       Text(
                                         userName,
                                         style: const TextStyle(
-                                          fontSize: 20,
+                                          fontSize: 22,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,
+                                          letterSpacing: -0.5,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 6),
+                                      const SizedBox(height: 7),
                                       Text(
                                         userEmail,
                                         style: TextStyle(
-                                          fontSize: 13,
+                                          fontSize: 14,
                                           color: Colors.white.withOpacity(0.9),
+                                          letterSpacing: 0.2,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 14),
+                                      const SizedBox(height: 16),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 18,
-                                          vertical: 8,
+                                          horizontal: 20,
+                                          vertical: 9,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.2),
-                                          borderRadius:
-                                              BorderRadius.circular(20),
+                                          color: Colors.white.withOpacity(0.22),
+                                          borderRadius: BorderRadius.circular(22),
                                           border: Border.all(
-                                            color:
-                                                Colors.white.withOpacity(0.3),
-                                            width: 1,
+                                            color: Colors.white.withOpacity(0.35),
+                                            width: 1.5,
                                           ),
                                         ),
                                         child: Row(
@@ -398,16 +402,17 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                           children: [
                                             Icon(
                                               Icons.star_rounded,
-                                              size: 16,
-                                              color: Colors.amber.shade300,
+                                              size: 17,
+                                              color: Colors.amber.shade200,
                                             ),
-                                            const SizedBox(width: 6),
+                                            const SizedBox(width: 7),
                                             const Text(
                                               'Premium Member',
                                               style: TextStyle(
-                                                fontSize: 12,
+                                                fontSize: 13,
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.w600,
+                                                letterSpacing: 0.3,
                                               ),
                                             ),
                                           ],
@@ -417,13 +422,13 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                   ),
                                 ),
 
-                                // Menu items
+                                // Menu Items
                                 ListView.builder(
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
                                   padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                    horizontal: 12,
+                                    vertical: 20,
+                                    horizontal: 16,
                                   ),
                                   itemCount: _sidebarItems.length,
                                   itemBuilder: (context, index) {
@@ -431,92 +436,109 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                     final isSelected = _selectedIndex == index;
 
                                     return Padding(
-                                      padding: const EdgeInsets.only(bottom: 6),
+                                      padding: const EdgeInsets.only(bottom: 8),
                                       child: Material(
                                         color: Colors.transparent,
                                         child: InkWell(
                                           onTap: () => _navigateTo(index),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(16),
                                           child: Container(
                                             decoration: BoxDecoration(
-                                              color: isSelected
-                                                  ? primaryColor
-                                                      .withOpacity(0.15)
-                                                  : Colors.transparent,
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
+                                              gradient: isSelected
+                                                  ? LinearGradient(
+                                                      colors: [
+                                                        Color(0xFF047BC1).withOpacity(0.15),
+                                                        Color(0xFF4F46E5).withOpacity(0.12),
+                                                      ],
+                                                      begin: Alignment.topLeft,
+                                                      end: Alignment.bottomRight,
+                                                    )
+                                                  : null,
+                                              borderRadius: BorderRadius.circular(16),
+                                              border: isSelected
+                                                  ? Border.all(
+                                                      color: Color(0xFF047BC1).withOpacity(0.25),
+                                                      width: 1.5,
+                                                    )
+                                                  : null,
                                             ),
                                             child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 16,
-                                                vertical: 14,
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 18,
+                                                vertical: 16,
                                               ),
                                               child: Row(
                                                 children: [
                                                   Container(
-                                                    padding:
-                                                        const EdgeInsets.all(8),
+                                                    padding: const EdgeInsets.all(10),
                                                     decoration: BoxDecoration(
+                                                      gradient: isSelected
+                                                          ? LinearGradient(
+                                                              colors: [
+                                                                Color(0xFF047BC1).withOpacity(0.25),
+                                                                Color(0xFF4F46E5).withOpacity(0.2),
+                                                              ],
+                                                              begin: Alignment.topLeft,
+                                                              end: Alignment.bottomRight,
+                                                            )
+                                                          : null,
                                                       color: isSelected
-                                                          ? primaryColor
-                                                              .withOpacity(0.2)
-                                                          : onSurfaceColor
-                                                              .withOpacity(
-                                                                  0.05),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              10),
+                                                          ? null
+                                                          : Colors.grey.withOpacity(0.08),
+                                                      borderRadius: BorderRadius.circular(12),
                                                     ),
                                                     child: Icon(
                                                       item.icon,
                                                       color: isSelected
-                                                          ? primaryColor
-                                                          : onSurfaceColor
-                                                              .withOpacity(0.7),
-                                                      size: 22,
+                                                          ? Color(0xFF047BC1)
+                                                          : Colors.grey.shade700,
+                                                      size: 23,
                                                     ),
                                                   ),
-                                                  const SizedBox(width: 16),
+                                                  const SizedBox(width: 18),
                                                   Expanded(
                                                     child: Text(
                                                       item.title,
                                                       style: TextStyle(
-                                                        fontSize: 15,
+                                                        fontSize: 16,
                                                         fontWeight: isSelected
                                                             ? FontWeight.w600
-                                                            : FontWeight.w400,
+                                                            : FontWeight.w500,
                                                         color: isSelected
-                                                            ? primaryColor
-                                                            : onSurfaceColor
-                                                                .withOpacity(
-                                                                    0.8),
+                                                            ? Color(0xFF047BC1)
+                                                            : Color(0xFF1A1A1A),
+                                                        letterSpacing: isSelected ? 0.1 : 0,
                                                       ),
                                                     ),
                                                   ),
-                                                  if (item.badgeCount != null &&
-                                                      item.badgeCount! > 0)
+                                                  if (item.badgeCount != null && item.badgeCount! > 0)
                                                     Container(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
+                                                      padding: const EdgeInsets.symmetric(
                                                         horizontal: 10,
                                                         vertical: 5,
                                                       ),
                                                       decoration: BoxDecoration(
-                                                        color: primaryColor,
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(10),
+                                                        gradient: LinearGradient(
+                                                          colors: [
+                                                            Color(0xFF047BC1),
+                                                            Color(0xFF4F46E5),
+                                                          ],
+                                                        ),
+                                                        borderRadius: BorderRadius.circular(12),
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color: Color(0xFF047BC1).withOpacity(0.3),
+                                                            blurRadius: 8,
+                                                            offset: Offset(0, 2),
+                                                          ),
+                                                        ],
                                                       ),
                                                       child: Text(
-                                                        item.badgeCount
-                                                            .toString(),
+                                                        item.badgeCount.toString(),
                                                         style: const TextStyle(
                                                           color: Colors.white,
-                                                          fontSize: 11,
-                                                          fontWeight:
-                                                              FontWeight.bold,
+                                                          fontSize: 12,
+                                                          fontWeight: FontWeight.bold,
                                                         ),
                                                       ),
                                                     ),
@@ -530,17 +552,31 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                   },
                                 ),
 
-                                // Logout Button
+                                // Premium Logout Button
                                 Padding(
-                                  padding: const EdgeInsets.all(16),
+                                  padding: const EdgeInsets.all(20),
                                   child: Container(
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: Colors.red.withOpacity(0.1),
-                                      border: Border.all(
-                                        color: Colors.red.withOpacity(0.3),
-                                        width: 1,
+                                      borderRadius: BorderRadius.circular(16),
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.red.shade50,
+                                          Colors.red.shade100.withOpacity(0.5),
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
                                       ),
+                                      border: Border.all(
+                                        color: Colors.red.withOpacity(0.25),
+                                        width: 1.5,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.red.withOpacity(0.1),
+                                          blurRadius: 12,
+                                          offset: Offset(0, 4),
+                                        ),
+                                      ],
                                     ),
                                     child: Material(
                                       color: Colors.transparent,
@@ -550,26 +586,25 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                           storage.remove('auth_token');
                                           Get.offAllNamed('/login');
                                         },
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(16),
                                         child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 16),
+                                          padding: const EdgeInsets.symmetric(vertical: 18),
                                           child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
+                                            mainAxisAlignment: MainAxisAlignment.center,
                                             children: [
                                               Icon(
                                                 Icons.logout_rounded,
-                                                color: Colors.red,
-                                                size: 22,
+                                                color: Colors.red.shade700,
+                                                size: 23,
                                               ),
                                               const SizedBox(width: 12),
                                               Text(
                                                 'Logout',
                                                 style: TextStyle(
-                                                  fontSize: 16,
+                                                  fontSize: 17,
                                                   fontWeight: FontWeight.w600,
-                                                  color: Colors.red,
+                                                  color: Colors.red.shade700,
+                                                  letterSpacing: 0.3,
                                                 ),
                                               ),
                                             ],
@@ -579,7 +614,7 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 24),
                               ],
                             ),
                           ),
@@ -592,19 +627,27 @@ class _SidebarWidgetState extends State<SidebarWidget>
             },
           ),
 
-          // Menu Button
+          // Premium Menu Button
           Positioned(
-            top: MediaQuery.of(context).padding.top + 10,
-            left: 10,
+            top: MediaQuery.of(context).padding.top + 12,
+            left: 12,
             child: Container(
               decoration: BoxDecoration(
-                color: primaryColor,
-                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF047BC1),
+                    Color(0xFF4F46E5),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(15),
                 boxShadow: [
                   BoxShadow(
-                    color: primaryColor.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: Color(0xFF047BC1).withOpacity(0.35),
+                    blurRadius: 12,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -612,17 +655,15 @@ class _SidebarWidgetState extends State<SidebarWidget>
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: _toggleSidebar,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(15),
                   child: Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(13),
                     child: AnimatedRotation(
                       turns: _isSidebarOpen ? 0.5 : 0,
                       duration: const Duration(milliseconds: 300),
                       child: Icon(
-                        _isSidebarOpen
-                            ? Icons.close_rounded
-                            : Icons.menu_rounded,
-                        size: 24,
+                        _isSidebarOpen ? Icons.close_rounded : Icons.menu_rounded,
+                        size: 26,
                         color: Colors.white,
                       ),
                     ),

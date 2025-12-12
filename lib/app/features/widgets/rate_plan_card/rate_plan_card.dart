@@ -1,7 +1,6 @@
 // lib/features/rate_plans/widgets/rate_plan_card.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../data/models/rate_plan/rate_plan_model.dart';
 
 class RatePlanCard extends StatelessWidget {
@@ -11,261 +10,677 @@ class RatePlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with name and status
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    plan.name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: plan.isActive ? Colors.green.shade100 : Colors.red.shade100,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    plan.isActive ? 'ACTIVE' : 'INACTIVE',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: plan.isActive ? Colors.green : Colors.red,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            
-            // Branch info
-            if (plan.branch != null) ...[
-              const SizedBox(height: 8),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            Colors.grey.shade50,
+          ],
+        ),
+        border: Border.all(
+          color: Colors.grey.shade100,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200.withOpacity(0.8),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.grey.shade100.withOpacity(0.5),
+            blurRadius: 5,
+            spreadRadius: 0,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with name and status
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.location_on, size: 16, color: Colors.blue),
-                  const SizedBox(width: 8),
-                  Text(
-                    plan.branch!.name,
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                      fontSize: 14,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          plan.name,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                            letterSpacing: -0.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        if (plan.branch != null) ...[
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color:
+                                      const Color(0xFF047BC1).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.location_on_rounded,
+                                  size: 16,
+                                  color: const Color(0xFF047BC1),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                plan.branch!.name,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: plan.isActive
+                          ? LinearGradient(
+                              colors: [
+                                const Color.fromRGBO(76, 175, 80, 0.15),
+                                const Color.fromRGBO(76, 175, 80, 0.05),
+                              ],
+                            )
+                          : LinearGradient(
+                              colors: [
+                                const Color.fromRGBO(244, 67, 54, 0.15),
+                                const Color.fromRGBO(244, 67, 54, 0.05),
+                              ],
+                            ),
+                      border: Border.all(
+                        color: plan.isActive
+                            ? const Color.fromRGBO(76, 175, 80, 0.3)
+                            : const Color.fromRGBO(244, 67, 54, 0.3),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Text(
+                      plan.isActive ? 'ACTIVE' : 'INACTIVE',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: plan.isActive
+                            ? const Color.fromRGBO(76, 175, 80, 1)
+                            : const Color.fromRGBO(244, 67, 54, 1),
+                        letterSpacing: 1.2,
+                      ),
                     ),
                   ),
                 ],
               ),
-            ],
-            
-            // Vehicle info
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.directions_car, size: 16, color: Colors.blue),
-                const SizedBox(width: 8),
-                Text(
-                  plan.vehicleClass.toUpperCase(),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade700,
+
+              const SizedBox(height: 20),
+
+              // Vehicle Information Section
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.grey.shade100,
                   ),
                 ),
-                if (plan.vehicle != null) ...[
-                  const SizedBox(width: 16),
-                  Icon(Icons.confirmation_number, size: 16, color: Colors.blue),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Plate: ${plan.vehicle!.plateNumber}',
-                    style: TextStyle(fontSize: 14),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4F46E5).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.directions_car_rounded,
+                            size: 20,
+                            color: const Color(0xFF4F46E5),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            plan.vehicleClass.toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        if (plan.vehicle != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              plan.vehicle!.plateNumber,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Notes
+              if (plan.notes != null && plan.notes!.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF8E1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFFFFECB3),
+                    ),
                   ),
-                ],
-              ],
-            ),
-            
-            // Notes
-            if (plan.notes != null && plan.notes!.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text(
-                plan.notes!,
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-            
-            // Rates Section
-            const SizedBox(height: 16),
-            const Text(
-              'Rates',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                _buildRateChip('Daily', plan.formattedDailyRate),
-                _buildRateChip('Weekly', plan.formattedWeeklyRate),
-                _buildRateChip('Monthly', plan.formattedMonthlyRate),
-                if (plan.weekendRate > 0)
-                  _buildRateChip('Weekend', plan.formattedWeekendRate),
-              ],
-            ),
-            
-            // Seasonal Rates
-            if (plan.seasonalOverrides.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              const Text(
-                'Seasonal Rates',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.orange,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...plan.seasonalOverrides.map((override) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          '${override.season.name} (${override.season.start.month}/${override.season.start.day}-${override.season.end.month}/${override.season.end.day})',
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFFB300),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.info_rounded,
+                          size: 16,
+                          color: Colors.white,
                         ),
                       ),
-                      Text(
-                        '${plan.currency} ${override.dailyRate}/day',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          plan.notes!,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF5D4037),
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                );
-              }),
-            ],
-            
-            // Taxes & Fees
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                if (plan.taxes.isNotEmpty) ...[
-                  Icon(Icons.receipt, size: 16, color: Colors.red),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Tax: ${(plan.totalTaxRate * 100).toStringAsFixed(1)}%',
-                    style: TextStyle(fontSize: 12, color: Colors.red),
+                ),
+              ],
+
+              // Rates Section
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF047BC1).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.attach_money_rounded,
+                      size: 20,
+                      color: Color(0xFF047BC1),
+                    ),
                   ),
                   const SizedBox(width: 12),
-                ],
-                if (plan.fees.isNotEmpty) ...[
-                  Icon(Icons.money, size: 16, color: Colors.green),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Fees: ${plan.fees.length}',
-                    style: TextStyle(fontSize: 12, color: Colors.green),
+                  const Text(
+                    'Rate Details',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
                   ),
                 ],
-              ],
-            ),
-            
-            // Validity Period
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.calendar_today, size: 16, color: Colors.blue),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Valid: ${plan.validityPeriod}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Rate Cards Grid
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                childAspectRatio: 1.6,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                children: [
+                  _buildRateCard(
+                    period: 'Daily',
+                    rate: plan.formattedDailyRate,
+                    icon: Icons.today_rounded,
+                    color: const Color(0xFF047BC1),
+                  ),
+                  _buildRateCard(
+                    period: 'Weekly',
+                    rate: plan.formattedWeeklyRate,
+                    icon: Icons.date_range_rounded,
+                    color: const Color(0xFF4F46E5),
+                  ),
+                  _buildRateCard(
+                    period: 'Monthly',
+                    rate: plan.formattedMonthlyRate,
+                    icon: Icons.calendar_month_rounded,
+                    color: const Color(0xFF3730A3),
+                  ),
+                  if (plan.weekendRate > 0)
+                    _buildRateCard(
+                      period: 'Weekend',
+                      rate: plan.formattedWeekendRate,
+                      icon: Icons.weekend_rounded,
+                      color: const Color(0xFF4CAF50),
+                    ),
+                ],
+              ),
+
+              // Seasonal Rates
+              if (plan.seasonalOverrides.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3E0),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFFFFCC80),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF9800),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons
+                                  .local_fire_department_rounded, // Alternative: seasonal/weather icon
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Seasonal Rates',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFE65100),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      ...plan.seasonalOverrides.map((override) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.grey.shade100,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      override.season.name,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${override.season.start.month}/${override.season.start.day} - ${override.season.end.month}/${override.season.end.day}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      const Color(0xFFFF9800).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${plan.currency} ${override.dailyRate}/day',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFFE65100),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
                   ),
                 ),
               ],
-            ),
-            
-            // Action buttons (only for admins)
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                // Edit button
-                IconButton(
-                  icon: const Icon(Icons.edit, size: 20, color: Colors.blue),
-                  onPressed: () {
-                    Get.snackbar(
-                      'Info',
-                      'Edit functionality requires admin privileges',
-                      backgroundColor: Colors.blue,
-                      colorText: Colors.white,
-                    );
-                  },
+
+              // Taxes & Fees
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  if (plan.taxes.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color.fromRGBO(244, 67, 54, 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.receipt_long_rounded,
+                        size: 18,
+                        color: Color.fromRGBO(244, 67, 54, 1),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Tax: ${(plan.totalTaxRate * 100).toStringAsFixed(1)}%',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color.fromRGBO(244, 67, 54, 1),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                  ],
+                  if (plan.fees.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color.fromRGBO(76, 175, 80, 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.monetization_on_rounded,
+                        size: 18,
+                        color: Color.fromRGBO(76, 175, 80, 1),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${plan.fees.length} Fee${plan.fees.length > 1 ? 's' : ''}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color.fromRGBO(76, 175, 80, 1),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+
+              // Validity Period
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                // Delete button
-                IconButton(
-                  icon: const Icon(Icons.delete, size: 20, color: Colors.red),
-                  onPressed: () {
-                    Get.snackbar(
-                      'Info',
-                      'Delete functionality requires admin privileges',
-                      backgroundColor: Colors.red,
-                      colorText: Colors.white,
-                    );
-                  },
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4F46E5).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.calendar_today_rounded,
+                        size: 18,
+                        color: Color(0xFF4F46E5),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Valid: ${plan.validityPeriod}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ],
+              ),
+
+              // Action buttons (only for admins)
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF047BC1), Color(0xFF4F46E5)],
+                      ),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
+                        onTap: () {
+                          Get.snackbar(
+                            'Info',
+                            'Edit functionality requires admin privileges',
+                            backgroundColor: const Color(0xFF047BC1),
+                            colorText: Colors.white,
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(
+                                Icons.edit_rounded,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Edit',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color.fromRGBO(244, 67, 54, 1),
+                          Color.fromRGBO(229, 57, 53, 1),
+                        ],
+                      ),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
+                        onTap: () {
+                          Get.snackbar(
+                            'Info',
+                            'Delete functionality requires admin privileges',
+                            backgroundColor:
+                                const Color.fromRGBO(244, 67, 54, 1),
+                            colorText: Colors.white,
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(
+                                Icons.delete_rounded,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Delete',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildRateChip(String period, String rate) {
+  Widget _buildRateCard({
+    required String period,
+    required String rate,
+    required IconData icon,
+    required Color color,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.shade100),
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color.withOpacity(0.08),
+            color.withOpacity(0.03),
+          ],
+        ),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1.5,
+        ),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            period,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.blue,
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              size: 22,
+              color: color,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 12),
+          Text(
+            period,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: color,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 6),
           Text(
             rate,
             style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
             ),
           ),
         ],

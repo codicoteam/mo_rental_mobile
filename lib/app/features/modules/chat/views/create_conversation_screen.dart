@@ -49,7 +49,6 @@ class _CreateConversationScreenState extends State<CreateConversationScreen> {
         return;
       }
 
-      // FIXED: Only include context if BOTH contextType AND contextId are provided
       String? contextType;
       String? contextId;
       
@@ -59,14 +58,13 @@ class _CreateConversationScreenState extends State<CreateConversationScreen> {
         contextType = _selectedContextType;
         contextId = _contextIdController.text.trim();
       }
-      // Otherwise both will be null (not sent to API)
 
       final conversation = await _controller.createConversation(
         title: _titleController.text.trim(),
         participantIds: _participants,
         type: _selectedType ?? 'direct',
-        contextType: contextType, // Will be null if not provided
-        contextId: contextId,     // Will be null if not provided
+        contextType: contextType,
+        contextId: contextId,
       );
 
       if (conversation != null) {
@@ -105,240 +103,747 @@ class _CreateConversationScreenState extends State<CreateConversationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('New Conversation'),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        leading: Container(
+          margin: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: Icon(Icons.arrow_back_rounded, color: Color(0xFF1A1A1A)),
+            onPressed: () => Get.back(),
+          ),
+        ),
+        title: Text(
+          'New Conversation',
+          style: TextStyle(
+            color: Color(0xFF1A1A1A),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.5,
+          ),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: _createConversation,
+          Container(
+            margin: EdgeInsets.only(right: 12, top: 8, bottom: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF047BC1), Color(0xFF4F46E5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0xFF047BC1).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: Icon(Icons.check_rounded, color: Colors.white),
+              onPressed: _createConversation,
+            ),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Title*',
-                  hintText: 'e.g., Support - Damaged Tyre',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Title is required';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              
-              // Participants
-              const Text(
-                'Participants*',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Row(
+              // Title Field
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _participantController,
-                      decoration: const InputDecoration(
-                        hintText: 'Enter participant ID',
-                        border: OutlineInputBorder(),
+                  Text(
+                    'Conversation Title',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1A1A),
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    controller: _titleController,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'e.g., Support - Damaged Tyre',
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade200,
+                          width: 1.5,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade200,
+                          width: 1.5,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: Color(0xFF047BC1),
+                          width: 2,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: Colors.red.shade300,
+                          width: 1.5,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: Colors.red,
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 16,
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: _addParticipant,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Title is required';
+                      }
+                      return null;
+                    },
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
               
-              // Participants list
+              SizedBox(height: 28),
+              
+              // Participants Section
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Participants',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A1A1A),
+                          letterSpacing: 0.1,
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Color(0xFF047BC1).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'Required',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF047BC1),
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _participantController,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Enter participant ID',
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade200,
+                                width: 1.5,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade200,
+                                width: 1.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Color(0xFF047BC1),
+                                width: 2,
+                              ),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF047BC1), Color(0xFF4F46E5)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xFF047BC1).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          icon: Icon(Icons.add_rounded, color: Colors.white, size: 24),
+                          onPressed: _addParticipant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              
+              SizedBox(height: 16),
+              
+              // Participants List
               if (_participants.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Added participants:'),
-                    Wrap(
-                      spacing: 8,
-                      children: _participants.map((participant) {
-                        return Chip(
-                          label: Text(participant),
-                          onDeleted: () => _removeParticipant(participant),
-                        );
-                      }).toList(),
+                Container(
+                  padding: EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.grey.shade200,
+                      width: 1.5,
                     ),
-                  ],
-                ),
-              const SizedBox(height: 20),
-              
-              // Type dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedType,
-                decoration: const InputDecoration(
-                  labelText: 'Type',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'direct',
-                    child: Text('Direct Message'),
                   ),
-                  DropdownMenuItem(
-                    value: 'group',
-                    child: Text('Group Chat'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.people_rounded,
+                            size: 18,
+                            color: Color(0xFF047BC1),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Added Participants (${_participants.length})',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: _participants.map((participant) {
+                          return Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Color(0xFF047BC1).withOpacity(0.15),
+                                  Color(0xFF4F46E5).withOpacity(0.12),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: Color(0xFF047BC1).withOpacity(0.25),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  participant,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF047BC1),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () => _removeParticipant(participant),
+                                  child: Icon(
+                                    Icons.close_rounded,
+                                    size: 18,
+                                    color: Color(0xFF047BC1),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              
+              SizedBox(height: 28),
+              
+              // Type Dropdown
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Conversation Type',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1A1A),
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    value: _selectedType,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade200,
+                          width: 1.5,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade200,
+                          width: 1.5,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: Color(0xFF047BC1),
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 16,
+                      ),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'direct',
+                        child: Text('Direct Message'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'group',
+                        child: Text('Group Chat'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedType = value;
+                      });
+                    },
                   ),
                 ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedType = value;
-                  });
-                },
               ),
-              const SizedBox(height: 20),
               
-              // Context Type
-              DropdownButtonFormField<String>(
-                value: _selectedContextType,
-                decoration: const InputDecoration(
-                  labelText: 'Context Type (Optional)',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: null,
-                    child: Text('None'),
+              SizedBox(height: 28),
+              
+              // Context Type Dropdown
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Context Type',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A1A1A),
+                          letterSpacing: 0.1,
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'Optional',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade700,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  DropdownMenuItem(
-                    value: 'reservation',
-                    child: Text('Reservation'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'support',
-                    child: Text('Support Ticket'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'booking',
-                    child: Text('Booking'),
+                  SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    value: _selectedContextType,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade200,
+                          width: 1.5,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade200,
+                          width: 1.5,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: Color(0xFF047BC1),
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 16,
+                      ),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: null,
+                        child: Text('None'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'reservation',
+                        child: Text('Reservation'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'support',
+                        child: Text('Support Ticket'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'booking',
+                        child: Text('Booking'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedContextType = value;
+                        if (value == null) {
+                          _contextIdController.clear();
+                        }
+                      });
+                    },
                   ),
                 ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedContextType = value;
-                    // Clear context ID when context type changes
-                    if (value == null) {
-                      _contextIdController.clear();
-                    }
-                  });
-                },
               ),
-              const SizedBox(height: 20),
               
-              // Context ID (only shown when context type is selected)
+              SizedBox(height: 28),
+              
+              // Context ID Field
               if (_selectedContextType != null)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextFormField(
-                      controller: _contextIdController,
-                      decoration: InputDecoration(
-                        labelText: '${_selectedContextType!.toUpperCase()} ID',
-                        hintText: 'Enter the ID',
-                        border: const OutlineInputBorder(),
+                    Text(
+                      '${_selectedContextType!.toUpperCase()} ID',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A1A),
+                        letterSpacing: 0.1,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Note: This ID should be a valid ObjectId format (24-character hex string)',
+                    SizedBox(height: 10),
+                    TextFormField(
+                      controller: _contextIdController,
                       style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Enter the ID',
+                        hintStyle: TextStyle(
+                          color: Colors.grey.shade400,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(
+                            color: Colors.grey.shade200,
+                            width: 1.5,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(
+                            color: Colors.grey.shade200,
+                            width: 1.5,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(
+                            color: Color(0xFF047BC1),
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 16,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Color(0xFF4F46E5).withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Color(0xFF4F46E5).withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            size: 18,
+                            color: Color(0xFF4F46E5),
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Must be a valid ObjectId format (24-character hex string)',
+                              style: TextStyle(
+                                color: Color(0xFF4F46E5),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               
-              const SizedBox(height: 30),
+              SizedBox(height: 36),
               
-              // Create button
-              ElevatedButton(
-                onPressed: _createConversation,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+              // Create Button
+              Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF047BC1), Color(0xFF4F46E5)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0xFF047BC1).withOpacity(0.35),
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: Obx(() {
-                  if (_controller.isLoading.value) {
-                    return const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    );
-                  }
-                  return const Text(
-                    'Create Conversation',
-                    style: TextStyle(fontSize: 16),
-                  );
-                }),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _createConversation,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Center(
+                      child: Obx(() {
+                        if (_controller.isLoading.value) {
+                          return SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          );
+                        }
+                        return Text(
+                          'Create Conversation',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            letterSpacing: 0.3,
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                ),
               ),
               
-              // Information text
-              const SizedBox(height: 20),
+              SizedBox(height: 24),
+              
+              // Information Card
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: Colors.grey.shade200,
+                    width: 1.5,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'About Context Fields:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Color(0xFF047BC1).withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.lightbulb_outline_rounded,
+                            size: 20,
+                            color: Color(0xFF047BC1),
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          'About Context Fields',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Color(0xFF1A1A1A),
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      '• Context Type and Context ID are optional',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                    const Text(
-                      '• Only provide them if this chat is related to a specific entity',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                    const Text(
-                      '• If you provide Context Type, you must also provide Context ID',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '• Context ID must be a valid ObjectId (e.g., 665a8c7be4f1c23b04d12345)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.blue[700],
-                      ),
+                    SizedBox(height: 16),
+                    _buildInfoItem('Context Type and Context ID are optional'),
+                    SizedBox(height: 10),
+                    _buildInfoItem('Only provide them if this chat is related to a specific entity'),
+                    SizedBox(height: 10),
+                    _buildInfoItem('If you provide Context Type, you must also provide Context ID'),
+                    SizedBox(height: 10),
+                    _buildInfoItem(
+                      'Context ID must be a valid ObjectId (e.g., 665a8c7be4f1c23b04d12345)',
+                      isHighlight: true,
                     ),
                   ],
                 ),
               ),
+              
+              SizedBox(height: 32),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoItem(String text, {bool isHighlight = false}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          margin: EdgeInsets.only(top: 4),
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: isHighlight ? Color(0xFF4F46E5) : Color(0xFF047BC1),
+            shape: BoxShape.circle,
+          ),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 14,
+              color: isHighlight ? Color(0xFF4F46E5) : Colors.grey.shade700,
+              fontWeight: isHighlight ? FontWeight.w600 : FontWeight.w400,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

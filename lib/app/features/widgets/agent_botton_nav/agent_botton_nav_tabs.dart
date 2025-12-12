@@ -25,6 +25,9 @@ class _MainNavigationState extends State<MainNavigation>
   final RatePlanBinding _ratePlanBinding = RatePlanBinding();
 
   late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   final List<Widget> _screens = [
     HomeScreen(),
@@ -45,12 +48,37 @@ class _MainNavigationState extends State<MainNavigation>
     super.initState();
     _checkAuth();
 
-    _fadeController =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 300))
-          ..forward();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    
+    _slideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _fadeController,
+        curve: Curves.easeOut,
+      ),
+    );
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.02),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _slideController,
+        curve: Curves.easeOutBack,
+      ),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ratePlanBinding.dependencies();
+      _fadeController.forward();
+      _slideController.forward();
     });
   }
 
@@ -63,6 +91,8 @@ class _MainNavigationState extends State<MainNavigation>
           'Please login again',
           backgroundColor: Colors.orange,
           colorText: Colors.white,
+          borderRadius: 12,
+          margin: const EdgeInsets.all(20),
         );
       });
     }
@@ -73,10 +103,10 @@ class _MainNavigationState extends State<MainNavigation>
     final userData = _storage.read('user_data') ?? {};
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: Colors.white,
 
       // ----------------------
-      //      Modern AppBar
+      //      Premium Glass AppBar
       // ----------------------
       appBar: AppBar(
         elevation: 0,
@@ -86,110 +116,246 @@ class _MainNavigationState extends State<MainNavigation>
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                const Color(0xFF047BC1).withOpacity(0.3),
-                const Color(0xFF4F46E5).withOpacity(0.3),
+                const Color(0xFF047BC1).withOpacity(0.15),
+                const Color(0xFF4F46E5).withOpacity(0.15),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF047BC1).withOpacity(0.2),
-                blurRadius: 12,
-              )
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 20,
+                spreadRadius: 0,
+                offset: const Offset(0, 2),
+              ),
             ],
           ),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _appBarTitles[_currentIndex],
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+          child: ClipRRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              child: Container(
+                color: Colors.white.withOpacity(0.85),
               ),
             ),
-            if (_currentIndex == 0 && userData['full_name'] != null)
-              Text(
-                "Welcome, ${userData['full_name']}!",
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.white70,
+          ),
+        ),
+        title: SlideTransition(
+          position: _slideAnimation,
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _appBarTitles[_currentIndex],
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A1A),
+                    letterSpacing: -0.5,
+                  ),
                 ),
-              ),
-          ],
+                if (_currentIndex == 0 && userData['full_name'] != null)
+                  const SizedBox(height: 4),
+                if (_currentIndex == 0 && userData['full_name'] != null)
+                  Text(
+                    "Welcome, ${userData['full_name']}!",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
         actions: [
           if (_currentIndex != 3)
-            IconButton(
-              icon: const Icon(Icons.logout, color: Colors.white),
-              onPressed: () => _authController.logout(),
+            Container(
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF047BC1).withOpacity(0.1),
+                    const Color(0xFF4F46E5).withOpacity(0.1),
+                  ],
+                ),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.logout_rounded, color: Color(0xFF047BC1)),
+                onPressed: () => _authController.logout(),
+                splashRadius: 20,
+                tooltip: 'Logout',
+              ),
             ),
         ],
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        ),
       ),
 
       // ----------------------
-      //         BODY
+      //         Animated Body
       // ----------------------
-      body: FadeTransition(
-        opacity: _fadeController,
-        child: _screens[_currentIndex],
+      body: SlideTransition(
+        position: _slideAnimation,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: _screens[_currentIndex],
+        ),
       ),
 
       // ----------------------
-      //     Glass BottomNav
+      //     Premium Glass BottomNav
       // ----------------------
       bottomNavigationBar: Container(
-        height: 72,
+        height: 84,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.25),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          color: Colors.white.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(
+            color: Colors.grey.withOpacity(0.15),
+            width: 1.5,
+          ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF047BC1).withOpacity(0.25),
+              color: const Color(0xFF047BC1).withOpacity(0.15),
+              blurRadius: 30,
+              spreadRadius: 0,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 20,
-              offset: const Offset(0, -2),
+              spreadRadius: 0,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Colors.white.withOpacity(0.9),
+              blurRadius: 15,
+              spreadRadius: 0,
+              offset: const Offset(0, 0),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.circular(28),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: BottomNavigationBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              selectedItemColor: const Color(0xFF047BC1),
-              unselectedItemColor: Colors.white70,
-              showUnselectedLabels: true,
-              type: BottomNavigationBarType.fixed,
-              currentIndex: _currentIndex,
-              onTap: (index) {
-                setState(() {
-                  _currentIndex = index;
-                  _fadeController.forward(from: 0);
-                });
-              },
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home),
-                  label: "Home",
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: BottomNavigationBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                selectedItemColor: const Color(0xFF047BC1),
+                unselectedItemColor: Colors.grey.shade600,
+                selectedLabelStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.1,
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.directions_car),
-                  label: "Cars",
+                unselectedLabelStyle: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade600,
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.monetization_on),
-                  label: "Rates",
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person),
-                  label: "Profile",
-                ),
-              ],
+                showSelectedLabels: true,
+                showUnselectedLabels: true,
+                type: BottomNavigationBarType.fixed,
+                currentIndex: _currentIndex,
+                onTap: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                    _fadeController.forward(from: 0);
+                    _slideController.forward(from: 0);
+                  });
+                },
+                items: [
+                  BottomNavigationBarItem(
+                    icon: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _currentIndex == 0
+                            ? const Color(0xFF047BC1).withOpacity(0.15)
+                            : Colors.transparent,
+                      ),
+                      child: Icon(
+                        Icons.home_rounded,
+                        size: _currentIndex == 0 ? 24 : 22,
+                        color: _currentIndex == 0
+                            ? const Color(0xFF047BC1)
+                            : Colors.grey.shade600,
+                      ),
+                    ),
+                    label: "Home",
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _currentIndex == 1
+                            ? const Color(0xFF047BC1).withOpacity(0.15)
+                            : Colors.transparent,
+                      ),
+                      child: Icon(
+                        Icons.directions_car_rounded,
+                        size: _currentIndex == 1 ? 24 : 22,
+                        color: _currentIndex == 1
+                            ? const Color(0xFF047BC1)
+                            : Colors.grey.shade600,
+                      ),
+                    ),
+                    label: "Cars",
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _currentIndex == 2
+                            ? const Color(0xFF047BC1).withOpacity(0.15)
+                            : Colors.transparent,
+                      ),
+                      child: Icon(
+                        Icons.attach_money_rounded,
+                        size: _currentIndex == 2 ? 24 : 22,
+                        color: _currentIndex == 2
+                            ? const Color(0xFF047BC1)
+                            : Colors.grey.shade600,
+                      ),
+                    ),
+                    label: "Rates",
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _currentIndex == 3
+                            ? const Color(0xFF047BC1).withOpacity(0.15)
+                            : Colors.transparent,
+                    ),
+                      child: Icon(
+                        Icons.person_rounded,
+                        size: _currentIndex == 3 ? 24 : 22,
+                        color: _currentIndex == 3
+                            ? const Color(0xFF047BC1)
+                            : Colors.grey.shade600,
+                      ),
+                    ),
+                    label: "Profile",
+                  ),
+                ],
+              ),
             ),
           ),
         ),

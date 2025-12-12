@@ -28,7 +28,7 @@ class MoRentalApp extends StatelessWidget {
       themeMode: ThemeMode.light,
 
       // Navigation setup
-      initialRoute: AppRoutes.login,
+      initialRoute: AppRoutes.splash,
       getPages: AppPages.pages,
       
       // Enable GetX logging in debug mode

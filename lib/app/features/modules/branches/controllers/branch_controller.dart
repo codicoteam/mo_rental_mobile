@@ -16,13 +16,14 @@ class BranchController extends GetxController {
   final RxString searchQuery = ''.obs;
   final RxString selectedCity = ''.obs;
   final RxString selectedRegion = ''.obs;
- // Add these properties to BranchController class
-final RxList<Branch> nearbyBranches = <Branch>[].obs;
-final RxBool isLoadingNearby = false.obs;
-final RxString nearbyError = ''.obs;
-final RxDouble currentLatitude = 0.0.obs;
-final RxDouble currentLongitude = 0.0.obs;
-final RxInt searchRadius = 5000.obs; // Default 5km
+  
+  // Add these properties to BranchController class
+  final RxList<Branch> nearbyBranches = <Branch>[].obs;
+  final RxBool isLoadingNearby = false.obs;
+  final RxString nearbyError = ''.obs;
+  final RxDouble currentLatitude = 0.0.obs;
+  final RxDouble currentLongitude = 0.0.obs;
+  final RxInt searchRadius = 5000.obs; // Default 5km
 
   @override
   void onInit() {
@@ -61,6 +62,46 @@ final RxInt searchRadius = 5000.obs; // Default 5km
       );
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  // Getter to access branches
+  List<Branch> get branches => branchesList.toList();
+
+  // Calculate distance for all branches and sort them
+  Future<void> calculateDistanceForAllBranches() async {
+    try {
+      if (currentLatitude.value == 0.0 || currentLongitude.value == 0.0) return;
+
+      // Sort branchesList by distance
+      branchesList.sort((a, b) {
+        final distanceA = getDistanceToBranch(a);
+        final distanceB = getDistanceToBranch(b);
+        
+        // Parse distances (e.g., "55.3 km" -> 55.3)
+        final numA = _parseDistanceToNumber(distanceA);
+        final numB = _parseDistanceToNumber(distanceB);
+        
+        return numA.compareTo(numB);
+      });
+      
+      branchesList.refresh();
+    } catch (e) {
+      print('❌ Error calculating distances: $e');
+    }
+  }
+
+  double _parseDistanceToNumber(String distance) {
+    try {
+      if (distance.contains('km')) {
+        final value = double.tryParse(distance.split(' ')[0]) ?? 0.0;
+        return value * 1000; // Convert km to meters for comparison
+      } else if (distance.contains('m') && !distance.contains('km')) {
+        return double.tryParse(distance.split(' ')[0]) ?? 0.0;
+      }
+      return 0.0;
+    } catch (e) {
+      return 0.0;
     }
   }
 
@@ -246,150 +287,84 @@ final RxInt searchRadius = 5000.obs; // Default 5km
     return branch.statusText;
   }
 
-
   Future<void> findNearbyBranches({
-  double? latitude,
-  double? longitude,
-  int? radius,
-}) async {
-  try {
-    isLoadingNearby.value = true;
-    nearbyError.value = '';
-    nearbyBranches.clear();
+    double? latitude,
+    double? longitude,
+    int? radius,
+  }) async {
+    try {
+      isLoadingNearby.value = true;
+      nearbyError.value = '';
+      nearbyBranches.clear();
 
-    // Use provided coordinates or current coordinates
-    final lat = latitude ?? currentLatitude.value;
-    final lng = longitude ?? currentLongitude.value;
-    final searchRadiusValue = radius ?? searchRadius.value;
+      // Use provided coordinates or current coordinates
+      final lat = latitude ?? currentLatitude.value;
+      final lng = longitude ?? currentLongitude.value;
+      final searchRadiusValue = radius ?? searchRadius.value;
 
-    // Validate coordinates
-    if (lat == 0.0 || lng == 0.0) {
-      throw Exception('Location not available. Please enable location services.');
-    }
+      // Validate coordinates
+      if (lat == 0.0 || lng == 0.0) {
+        throw Exception('Location not available. Please enable location services.');
+      }
 
-    print('📍 Finding branches near: lat=$lat, lng=$lng, radius=${searchRadiusValue}m');
+      print('📍 Finding branches near: lat=$lat, lng=$lng, radius=${searchRadiusValue}m');
 
-    final branches = await _repository.getNearbyBranches(
-      latitude: lat,
-      longitude: lng,
-      maxDistance: searchRadiusValue,
-    );
-
-    // Sort by distance
-    branches.sort((a, b) {
-      final distanceA = _repository.calculateDistance(
-        lat, lng, a.geo.latitude, a.geo.longitude,
+      final branches = await _repository.getNearbyBranches(
+        latitude: lat,
+        longitude: lng,
+        maxDistance: searchRadiusValue,
       );
-      final distanceB = _repository.calculateDistance(
-        lat, lng, b.geo.latitude, b.geo.longitude,
-      );
-      return distanceA.compareTo(distanceB);
-    });
 
-    nearbyBranches.assignAll(branches);
-    
-    print('✅ Found ${branches.length} nearby branch(es)');
-    
-    if (branches.isEmpty) {
+      // Sort by distance
+      branches.sort((a, b) {
+        final distanceA = _repository.calculateDistance(
+          lat, lng, a.geo.latitude, a.geo.longitude,
+        );
+        final distanceB = _repository.calculateDistance(
+          lat, lng, b.geo.latitude, b.geo.longitude,
+        );
+        return distanceA.compareTo(distanceB);
+      });
+
+      nearbyBranches.assignAll(branches);
+      
+      print('✅ Found ${branches.length} nearby branch(es)');
+      
+      if (branches.isEmpty) {
+        Get.snackbar(
+          'No Branches Nearby',
+          'No branches found within ${searchRadiusValue ~/ 1000}km',
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      nearbyError.value = e.toString();
+      print('❌ Error finding nearby branches: $e');
       Get.snackbar(
-        'No Branches Nearby',
-        'No branches found within ${searchRadiusValue ~/ 1000}km',
-        backgroundColor: Colors.orange,
+        'Location Error',
+        e.toString(),
+        backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    } finally {
+      isLoadingNearby.value = false;
     }
-  } catch (e) {
-    nearbyError.value = e.toString();
-    print('❌ Error finding nearby branches: $e');
-    Get.snackbar(
-      'Location Error',
-      e.toString(),
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
-    );
-  } finally {
-    isLoadingNearby.value = false;
   }
-}
 
-// Update user location
-void updateUserLocation(double latitude, double longitude) {
-  currentLatitude.value = latitude;
-  currentLongitude.value = longitude;
-  print('📍 User location updated: lat=$latitude, lng=$longitude');
-}
-
-// Get distance to a branch
-String getDistanceToBranch(Branch branch) {
-  if (currentLatitude.value == 0.0 || currentLongitude.value == 0.0) {
-    return 'Distance unknown';
+  // Update user location
+  void updateUserLocation(double latitude, double longitude) {
+    currentLatitude.value = latitude;
+    currentLongitude.value = longitude;
+    print('📍 User location updated: lat=$latitude, lng=$longitude');
   }
-  
-  final distance = _repository.calculateDistance(
-    currentLatitude.value,
-    currentLongitude.value,
-    branch.geo.latitude,
-    branch.geo.longitude,
-  );
-  
-  if (distance < 1000) {
-    return '${distance.toStringAsFixed(0)}m away';
-  } else {
-    return '${(distance / 1000).toStringAsFixed(1)}km away';
-  }
-}
 
-// Get formatted distance for display
-String getFormattedDistance(double distanceInMeters) {
-  if (distanceInMeters < 1000) {
-    return '${distanceInMeters.toStringAsFixed(0)}m';
-  } else {
-    return '${(distanceInMeters / 1000).toStringAsFixed(1)}km';
-  }
-}
-
-// Get branches sorted by distance
-List<Branch> getBranchesSortedByDistance() {
-  if (currentLatitude.value == 0.0 || currentLongitude.value == 0.0) {
-    return branchesList.toList();
-  }
-  
-  final sortedBranches = branchesList.toList();
-  sortedBranches.sort((a, b) {
-    final distanceA = _repository.calculateDistance(
-      currentLatitude.value,
-      currentLongitude.value,
-      a.geo.latitude,
-      a.geo.longitude,
-    );
-    final distanceB = _repository.calculateDistance(
-      currentLatitude.value,
-      currentLongitude.value,
-      b.geo.latitude,
-      b.geo.longitude,
-    );
-    return distanceA.compareTo(distanceB);
-  });
-  
-  return sortedBranches;
-}
-
-// Set search radius
-void setSearchRadius(int radiusInMeters) {
-  searchRadius.value = radiusInMeters;
-  print('📏 Search radius set to: ${radiusInMeters}m');
-}
-
-// Get nearby active branches (with distance calculation)
-List<Map<String, dynamic>> getNearbyActiveBranches() {
-  if (currentLatitude.value == 0.0 || currentLongitude.value == 0.0) {
-    return [];
-  }
-  
-  final activeBranches = getActiveBranches();
-  final result = <Map<String, dynamic>>[];
-  
-  for (final branch in activeBranches) {
+  // Get distance to a branch
+  String getDistanceToBranch(Branch branch) {
+    if (currentLatitude.value == 0.0 || currentLongitude.value == 0.0) {
+      return 'Distance unknown';
+    }
+    
     final distance = _repository.calculateDistance(
       currentLatitude.value,
       currentLongitude.value,
@@ -397,24 +372,89 @@ List<Map<String, dynamic>> getNearbyActiveBranches() {
       branch.geo.longitude,
     );
     
-    if (distance <= searchRadius.value) {
-      result.add({
-        'branch': branch,
-        'distance': distance,
-        'formattedDistance': getFormattedDistance(distance),
-      });
+    if (distance < 1000) {
+      return '${distance.toStringAsFixed(0)}m away';
+    } else {
+      return '${(distance / 1000).toStringAsFixed(1)}km away';
     }
   }
-  
-  // Sort by distance
-  result.sort((a, b) => (a['distance'] as double).compareTo(b['distance'] as double));
-  
-  return result;
-}
 
-// Clear nearby search
-void clearNearbySearch() {
-  nearbyBranches.clear();
-  nearbyError.value = '';
-}
+  // Get formatted distance for display
+  String getFormattedDistance(double distanceInMeters) {
+    if (distanceInMeters < 1000) {
+      return '${distanceInMeters.toStringAsFixed(0)}m';
+    } else {
+      return '${(distanceInMeters / 1000).toStringAsFixed(1)}km';
+    }
+  }
+
+  // Get branches sorted by distance
+  List<Branch> getBranchesSortedByDistance() {
+    if (currentLatitude.value == 0.0 || currentLongitude.value == 0.0) {
+      return branchesList.toList();
+    }
+    
+    final sortedBranches = branchesList.toList();
+    sortedBranches.sort((a, b) {
+      final distanceA = _repository.calculateDistance(
+        currentLatitude.value,
+        currentLongitude.value,
+        a.geo.latitude,
+        a.geo.longitude,
+      );
+      final distanceB = _repository.calculateDistance(
+        currentLatitude.value,
+        currentLongitude.value,
+        b.geo.latitude,
+        b.geo.longitude,
+      );
+      return distanceA.compareTo(distanceB);
+    });
+    
+    return sortedBranches;
+  }
+
+  // Set search radius
+  void setSearchRadius(int radiusInMeters) {
+    searchRadius.value = radiusInMeters;
+    print('📏 Search radius set to: ${radiusInMeters}m');
+  }
+
+  // Get nearby active branches (with distance calculation)
+  List<Map<String, dynamic>> getNearbyActiveBranches() {
+    if (currentLatitude.value == 0.0 || currentLongitude.value == 0.0) {
+      return [];
+    }
+    
+    final activeBranches = getActiveBranches();
+    final result = <Map<String, dynamic>>[];
+    
+    for (final branch in activeBranches) {
+      final distance = _repository.calculateDistance(
+        currentLatitude.value,
+        currentLongitude.value,
+        branch.geo.latitude,
+        branch.geo.longitude,
+      );
+      
+      if (distance <= searchRadius.value) {
+        result.add({
+          'branch': branch,
+          'distance': distance,
+          'formattedDistance': getFormattedDistance(distance),
+        });
+      }
+    }
+    
+    // Sort by distance
+    result.sort((a, b) => (a['distance'] as double).compareTo(b['distance'] as double));
+    
+    return result;
+  }
+
+  // Clear nearby search
+  void clearNearbySearch() {
+    nearbyBranches.clear();
+    nearbyError.value = '';
+  }
 }
