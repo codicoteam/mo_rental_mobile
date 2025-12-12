@@ -572,6 +572,16 @@ https://car-rental-backend-system.onrender.com
 
 
 
+Instance "ReservationController" has been initialized
+Another exception was thrown: 
+_ReservationListScreenState is a
+SingleTickerProviderStateMixin but multiple 
+tickers were created.A SingleTickerProviderStateMixin can only be used as a TickerProvider once.
+If a State is used for multiple AnimationController objects,or if it si passed to other objects 
+and those objects might ise it more than one time in total, then instead of mixing in a SingleTickerProviderStateMixin, 
+use a regular TickerProviderStateMixin
+
+
 
 
 GIVE NECCESSARY INFOR NOT WAFFLE OR REPEAT 
@@ -632,7 +642,7 @@ Only modify UI components, styling, and widget tree arrangement
 
 Do not add or remove any business logic
 
+Add more animations?
 
-
-
+Add additional visual effects?
 

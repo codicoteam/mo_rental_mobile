@@ -11,16 +11,43 @@ class ReservationDetailScreen extends StatefulWidget {
   State<ReservationDetailScreen> createState() => _ReservationDetailScreenState();
 }
 
-class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
+class _ReservationDetailScreenState extends State<ReservationDetailScreen> 
+    with TickerProviderStateMixin {
   final ReservationController controller = Get.find<ReservationController>();
   late String reservationId;
   Reservation? reservation;
   bool isLoading = true;
   String error = '';
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+  late AnimationController _slideController;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
+    
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    
+    _slideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
+    );
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.easeOut),
+    );
+    
     final args = Get.arguments as Map<String, dynamic>?;
     reservationId = args?['reservationId'] ?? '';
     if (reservationId.isNotEmpty) {
@@ -31,6 +58,13 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
         isLoading = false;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadReservation() async {
@@ -46,6 +80,12 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
         reservation = loadedReservation;
         isLoading = false;
       });
+      
+      // Start animations after loading
+      if (loadedReservation != null) {
+        _fadeController.forward();
+        _slideController.forward();
+      }
     } catch (e) {
       setState(() {
         error = e.toString();
@@ -63,32 +103,43 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
   }
 
   Widget _buildInfoRow(String label, String value, {bool isImportant = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade700,
+    return AnimatedBuilder(
+      animation: _fadeController,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: child,
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 140,
+              padding: const EdgeInsets.only(right: 16),
+              child: Text(
+                '$label:',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF047BC1),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontWeight: isImportant ? FontWeight.bold : FontWeight.normal,
-                fontSize: isImportant ? 16 : 14,
+            Expanded(
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: isImportant ? 17 : 15,
+                  fontWeight: isImportant ? FontWeight.w700 : FontWeight.w500,
+                  color: Colors.black87,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -99,44 +150,62 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
     
     switch (status.toLowerCase()) {
       case 'confirmed':
-        color = Colors.green;
-        icon = Icons.check_circle;
+        color = const Color.fromRGBO(76, 175, 80, 1);
+        icon = Icons.check_circle_rounded;
         break;
       case 'pending':
-        color = Colors.orange;
-        icon = Icons.access_time;
+        color = const Color.fromRGBO(255, 152, 0, 1);
+        icon = Icons.access_time_rounded;
         break;
       case 'cancelled':
-        color = Colors.red;
-        icon = Icons.cancel;
+        color = const Color.fromRGBO(244, 67, 54, 1);
+        icon = Icons.cancel_rounded;
         break;
       case 'completed':
-        color = Colors.blue;
-        icon = Icons.done_all;
+        color = const Color(0xFF047BC1);
+        icon = Icons.done_all_rounded;
         break;
       default:
         color = Colors.grey;
-        icon = Icons.info;
+        icon = Icons.info_rounded;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color, width: 1),
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.15),
+            color.withOpacity(0.05),
+          ],
+        ),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.2),
+            blurRadius: 8,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
           Text(
             status.toUpperCase(),
             style: TextStyle(
               color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              letterSpacing: 0.5,
             ),
           ),
         ],
@@ -144,28 +213,104 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
     );
   }
 
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return SlideTransition(
+      position: _slideAnimation,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.grey.shade100,
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.shade100.withOpacity(0.8),
+                blurRadius: 20,
+                spreadRadius: 2,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: Colors.grey.shade50.withOpacity(0.5),
+                blurRadius: 5,
+                spreadRadius: 0,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF047BC1).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: const Color(0xFF047BC1),
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              child,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reservation Details'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadReservation,
-            tooltip: 'Refresh',
-          ),
-        ],
-      ),
+      backgroundColor: Colors.white,
       body: isLoading
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Loading reservation details...'),
+                  SizedBox(
+                    width: 60,
+                    height: 60,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor: AlwaysStoppedAnimation(
+                        const Color(0xFF047BC1),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Loading reservation details...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
                 ],
               ),
             )
@@ -174,249 +319,466 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error, color: Colors.red, size: 48),
-                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.red.shade50,
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.red.shade100,
+                              Colors.red.shade50,
+                            ],
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.error_outline_rounded,
+                          color: Colors.red,
+                          size: 48,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
                           error,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.red),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.red,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadReservation,
-                        child: const Text('Retry'),
+                      const SizedBox(height: 20),
+                      Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF047BC1), Color(0xFF4F46E5)],
+                          ),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(14),
+                          child: InkWell(
+                            onTap: _loadReservation,
+                            borderRadius: BorderRadius.circular(14),
+                            child: const Center(
+                              child: Text(
+                                'Try Again',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 )
               : reservation == null
-                  ? const Center(
-                      child: Text('Reservation not found'),
-                    )
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
+                  ? Center(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Header with ID and Status
-                          Card(
-                            elevation: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          'Reservation #${reservation!.id.substring(0, 8)}...',
-                                          style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      _buildStatusBadge(reservation!.status),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Created: ${_formatDateTime(reservation!.createdAt)}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.grey.shade100,
+                                  Colors.grey.shade50,
                                 ],
                               ),
                             ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Vehicle Information
-                          Card(
-                            elevation: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Vehicle Information',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _buildInfoRow('Vehicle', reservation!.vehicleDetails?.displayName ?? 'Unknown', isImportant: true),
-                                  if (reservation!.vehicleDetails?.licensePlate != null)
-                                    _buildInfoRow('Plate', reservation!.vehicleDetails!.licensePlate),
-                                  if (reservation!.vehicleDetails?.color != null)
-                                    _buildInfoRow('Color', reservation!.vehicleDetails!.color!),
-                                  if (reservation!.vehicleDetails?.fuelType != null)
-                                    _buildInfoRow('Fuel', reservation!.vehicleDetails!.fuelType!),
-                                  _buildInfoRow('Seats', '${reservation!.vehicleDetails?.seatingCapacity ?? 'N/A'}'),
-                                ],
-                              ),
+                            child: const Icon(
+                              Icons.search_off_rounded,
+                              size: 48,
+                              color: Colors.grey,
                             ),
                           ),
-
-                          const SizedBox(height: 16),
-
-                          // Rental Period
-                          Card(
-                            elevation: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Rental Period',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _buildInfoRow('Pickup Date', _formatDate(reservation!.startDate), isImportant: true),
-                                  _buildInfoRow('Return Date', _formatDate(reservation!.endDate), isImportant: true),
-                                  _buildInfoRow('Duration', '${reservation!.durationInDays} days'),
-                                ],
-                              ),
+                          const SizedBox(height: 20),
+                          const Text(
+                            'Reservation not found',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
                             ),
                           ),
-
-                          const SizedBox(height: 16),
-
-                          // Pricing Details
-                          Card(
-                            elevation: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Pricing Details',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _buildInfoRow('Base Rate', '\$${reservation!.totalAmount.toStringAsFixed(2)}'),
-                                  _buildInfoRow('Status', reservation!.statusText),
-                                  const Divider(height: 24),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text(
-                                        'Total Amount',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        '\$${reservation!.totalAmount.toStringAsFixed(2)}',
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.green,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Driver Information
-                          Card(
-                            elevation: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Driver Information',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _buildInfoRow('Name', reservation!.userId),
-                                  // Add more driver info if available in your model
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // Action Buttons
-                          if (reservation!.status.toLowerCase() == 'pending')
-                            Column(
-                              children: [
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      // TODO: Implement cancel reservation
-                                      Get.snackbar(
-                                        'Coming Soon',
-                                        'Cancel feature will be available soon',
-                                        backgroundColor: Colors.orange,
-                                      );
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      backgroundColor: Colors.red,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'Cancel Reservation',
-                                      style: TextStyle(fontSize: 16),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                              ],
-                            ),
-
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: () => Get.back(),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: const Text('Back to List'),
-                            ),
-                          ),
-
-                          const SizedBox(height: 40),
                         ],
                       ),
+                    )
+                  : CustomScrollView(
+                      slivers: [
+                        SliverAppBar(
+                          expandedHeight: 160,
+                          floating: false,
+                          pinned: true,
+                          backgroundColor: Colors.white,
+                          surfaceTintColor: Colors.white,
+                          elevation: 0,
+                          flexibleSpace: FlexibleSpaceBar(
+                            collapseMode: CollapseMode.pin,
+                            background: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.white,
+                                    Colors.grey.shade50,
+                                  ],
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 70, left: 24, right: 24, bottom: 16),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Reservation Details',
+                                            style: TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.black87,
+                                              letterSpacing: -0.5,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'ID: ${reservation!.id.substring(0, 8)}...',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey.shade600,
+                                              fontFamily: 'monospace',
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            const Color(0xFF047BC1).withOpacity(0.1),
+                                            const Color(0xFF4F46E5).withOpacity(0.1),
+                                          ],
+                                        ),
+                                      ),
+                                      child: IconButton(
+                                        icon: Icon(
+                                          Icons.refresh_rounded,
+                                          color: const Color(0xFF047BC1),
+                                          size: 24,
+                                        ),
+                                        onPressed: _loadReservation,
+                                        tooltip: 'Refresh',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Header Card with Status
+                                SlideTransition(
+                                  position: _slideAnimation,
+                                  child: FadeTransition(
+                                    opacity: _fadeAnimation,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(24),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                        gradient: const LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            Colors.white,
+                                            Color.fromRGBO(240, 245, 255, 1),
+                                          ],
+                                        ),
+                                        border: Border.all(
+                                          color: Colors.grey.shade100,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  'Status',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.grey.shade600,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                              _buildStatusBadge(reservation!.status),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(8),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFF4F46E5).withOpacity(0.1),
+                                                  borderRadius: BorderRadius.circular(10),
+                                                ),
+                                                child: Icon(
+                                                  Icons.calendar_today_rounded,
+                                                  size: 18,
+                                                  color: const Color(0xFF4F46E5),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Text(
+                                                  'Created: ${_formatDateTime(reservation!.createdAt)}',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.grey.shade700,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                // Vehicle Information
+                                _buildSectionCard(
+                                  title: 'Vehicle Information',
+                                  icon: Icons.directions_car_rounded,
+                                  child: Column(
+                                    children: [
+                                      _buildInfoRow(
+                                        'Vehicle',
+                                        reservation!.vehicleDetails?.displayName ?? 'Unknown',
+                                        isImportant: true,
+                                      ),
+                                      if (reservation!.vehicleDetails?.licensePlate != null)
+                                        _buildInfoRow('License Plate', reservation!.vehicleDetails!.licensePlate),
+                                      if (reservation!.vehicleDetails?.color != null)
+                                        _buildInfoRow('Color', reservation!.vehicleDetails!.color!),
+                                      if (reservation!.vehicleDetails?.fuelType != null)
+                                        _buildInfoRow('Fuel Type', reservation!.vehicleDetails!.fuelType!),
+                                      _buildInfoRow('Seats', '${reservation!.vehicleDetails?.seatingCapacity ?? 'N/A'}'),
+                                    ],
+                                  ),
+                                ),
+
+                                // Rental Period
+                                _buildSectionCard(
+                                  title: 'Rental Period',
+                                  icon: Icons.calendar_month_rounded,
+                                  child: Column(
+                                    children: [
+                                      _buildInfoRow('Pickup Date', _formatDate(reservation!.startDate), isImportant: true),
+                                      _buildInfoRow('Return Date', _formatDate(reservation!.endDate), isImportant: true),
+                                      _buildInfoRow('Duration', '${reservation!.durationInDays} days'),
+                                    ],
+                                  ),
+                                ),
+
+                                // Pricing Details
+                                _buildSectionCard(
+                                  title: 'Pricing Details',
+                                  icon: Icons.attach_money_rounded,
+                                  child: Column(
+                                    children: [
+                                      _buildInfoRow('Base Rate', '\$${reservation!.totalAmount.toStringAsFixed(2)}'),
+                                      _buildInfoRow('Status', reservation!.statusText),
+                                      const SizedBox(height: 16),
+                                      Container(
+                                        padding: const EdgeInsets.all(20),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(16),
+                                          gradient: const LinearGradient(
+                                            colors: [Color(0xFF047BC1), Color(0xFF4F46E5)],
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                              'Total Amount',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w700,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            Text(
+                                              '\$${reservation!.totalAmount.toStringAsFixed(2)}',
+                                              style: const TextStyle(
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.w800,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Driver Information
+                                _buildSectionCard(
+                                  title: 'Driver Information',
+                                  icon: Icons.person_outline_rounded,
+                                  child: Column(
+                                    children: [
+                                      _buildInfoRow('User ID', reservation!.userId),
+                                      // Add more driver info if available in your model
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 24),
+
+                                // Action Buttons
+                                if (reservation!.status.toLowerCase() == 'pending')
+                                  SlideTransition(
+                                    position: _slideAnimation,
+                                    child: Container(
+                                      height: 56,
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(14),
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            const Color.fromRGBO(244, 67, 54, 1),
+                                            const Color.fromRGBO(229, 57, 53, 1),
+                                          ],
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color.fromRGBO(244, 67, 54, 0.4),
+                                            blurRadius: 16,
+                                            spreadRadius: 0,
+                                            offset: const Offset(0, 8),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        borderRadius: BorderRadius.circular(14),
+                                        child: InkWell(
+                                          onTap: () {
+                                            Get.snackbar(
+                                              'Coming Soon',
+                                              'Cancel feature will be available soon',
+                                              backgroundColor: Colors.orange,
+                                            );
+                                          },
+                                          borderRadius: BorderRadius.circular(14),
+                                          child: const Center(
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.cancel_rounded,
+                                                  color: Colors.white,
+                                                ),
+                                                SizedBox(width: 12),
+                                                Text(
+                                                  'Cancel Reservation',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                SlideTransition(
+                                  position: _slideAnimation,
+                                  child: Container(
+                                    height: 56,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(14),
+                                      border: Border.all(
+                                        color: Colors.grey.shade300,
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(14),
+                                      child: InkWell(
+                                        onTap: () => Get.back(),
+                                        borderRadius: BorderRadius.circular(14),
+                                        child: const Center(
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.arrow_back_rounded,
+                                                color: Colors.black87,
+                                              ),
+                                              SizedBox(width: 12),
+                                              Text(
+                                                'Back to List',
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 40),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
     );
   }

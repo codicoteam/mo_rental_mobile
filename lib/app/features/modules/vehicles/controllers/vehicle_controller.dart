@@ -13,6 +13,12 @@ class VehicleController extends GetxController {
   final RxString errorMessage = ''.obs;
   final RxMap<String, dynamic> filters = <String, dynamic>{}.obs;
   final RxString searchQuery = ''.obs;
+  
+  // Add the missing properties that your UI is trying to access
+  final Rx<String?> filterStatus = Rx<String?>(null);
+  final RxBool filterAvailableOnly = false.obs;
+  final RxBool filterActiveOnly = false.obs;
+  final TextEditingController searchTextController = TextEditingController();
 
   VehicleController(this._repository);
 
@@ -20,7 +26,49 @@ class VehicleController extends GetxController {
   void onInit() {
     super.onInit();
     print('🚙 VehicleController initialized');
+    
+    // Listen to search text changes
+    searchTextController.addListener(() {
+      searchVehicles(searchTextController.text);
+    });
+    
     fetchVehicles();
+  }
+
+  @override
+  void onClose() {
+    searchTextController.dispose();
+    super.onClose();
+  }
+
+  // Add this method that your UI is calling
+  void applyFilters() {
+    print('🚙 Applying filters from dialog');
+    
+    // Map dialog values to filter method
+    String? statusFilter;
+    String? availabilityFilter;
+    
+    if (filterStatus.value == 'active') {
+      statusFilter = 'active';
+    } else if (filterStatus.value == 'inactive') {
+      statusFilter = 'inactive';
+    } else if (filterStatus.value == 'maintenance') {
+      statusFilter = 'maintenance';
+    } else if (filterStatus.value == 'available') {
+      availabilityFilter = 'available';
+    } else if (filterStatus.value == 'reserved') {
+      availabilityFilter = 'reserved';
+    } else if (filterStatus.value == 'rented') {
+      availabilityFilter = 'rented';
+    }
+    
+    filterVehicles(
+      status: statusFilter,
+      availabilityState: availabilityFilter,
+      availableOnly: filterAvailableOnly.value,
+      activeOnly: filterActiveOnly.value,
+    );
   }
 
   Future<void> fetchVehicles({
@@ -153,6 +201,10 @@ class VehicleController extends GetxController {
   void clearFilters() {
     print('🚙 Clearing all vehicle filters');
     filters.clear();
+    filterStatus.value = null;
+    filterAvailableOnly.value = false;
+    filterActiveOnly.value = false;
+    searchTextController.clear();
     filteredVehicles.assignAll(vehicles);
   }
 
