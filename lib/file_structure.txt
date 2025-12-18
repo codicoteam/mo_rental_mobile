@@ -482,6 +482,11 @@ Summary:
 
 So when you see 201 in the logs, CELEBRATE - your booking worked perfectly! 🎉
 
+org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=2G -XX:+HeapDumpOnOutOfMemoryError
+android.useAndroidX=true
+android.enableJetifier=true
+
+
 
 
 
@@ -519,7 +524,6 @@ ipahchirume@gmail.com
 Dr3@mb1g
 
 
-https://www.youtube.com/redirect?event=comments&redir_token=QUFFLUhqbjIwbjdUczBxd011SjlyWEhsaF9QTmpJb3M0d3xBQ3Jtc0tsV3lQYS1BTk9uOXoxalg1Wl9SN0tmY3hBa013dTlWdGg3V01yTFZ0cHhUbklvSWF1NmxPN0htN3Awbm1aUTczTXN6bjFWemk2ZEgzS3YtcGhuamNvdzNtXzVEOHotUjc2dmpBV3QwaHU3NlNyS1NWRQ&q=https%3A%2F%2Fadventist.zoom.us%2Fj%2F93275363864%3Fpwd%3DY1dtQjF3YUl5aGdud2xtK0dNdzBtQT09
 
 
 ENDPOINT DETAILS:
@@ -646,3 +650,38 @@ Add more animations?
 
 Add additional visual effects?
 
+
+
+
+
+
+
+Solution 4: Hybrid Approach (Recommended)
+
+Combine the above for a complete solution:
+Step-by-Step Flow:
+dart
+
+// 1. Add role selection during registration
+class RegisterScreen extends StatelessWidget {
+  // Add this to your registration form:
+  DropdownButtonFormField<String>(
+    value: _selectedRole,
+    items: [
+      DropdownMenuItem(value: 'customer', child: Text('Customer')),
+      DropdownMenuItem(value: 'agent', child: Text('Agent (Request Access)')),
+    ],
+    onChanged: (value) {
+      _selectedRole = value;
+      if (value == 'agent') {
+        // Show additional agent fields
+        _showAgentFields = true;
+      }
+    },
+  ),
+  
+  // If agent selected, collect:
+  // - Employee ID
+  // - Company name
+  // - Manager email for approval
+}
