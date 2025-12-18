@@ -5,10 +5,16 @@ import '../../domain/repositories/vehicle_model_repository.dart';
 import '../../domain/repositories/vehicle_repository.dart';
 import '../bindings/app_bindings.dart';
 import '../features/data/models/branch_models/branch_models.dart';
+import '../features/modules/agent/views/agent_create_reservation_screen.dart';
+import '../features/modules/agent/views/agent_customer_selection_screen.dart';
+import '../features/modules/agent/views/agent_home_screen.dart';
+import '../features/modules/agent/views/agent_reservation_detail_screen.dart';
+import '../features/modules/agent/views/agent_reservation_list_screen.dart';
 import '../features/modules/auth/views/forgot_password_screen.dart';
 import '../features/modules/auth/views/login_screen.dart';
 import '../features/modules/auth/views/register_screen.dart';
 import '../features/modules/auth/views/verify_email_screen.dart';
+import '../features/modules/bindings/agent_reservation_binding.dart';
 import '../features/modules/bindings/branch_binding.dart';
 import '../features/modules/bindings/chat_binding.dart';
 import '../features/modules/bindings/rate_plan_binding.dart';
@@ -222,6 +228,31 @@ class AppPages {
       name: AppRoutes.forgotPassword,
       page: () => const ForgotPasswordScreen(),
       binding: AuthBinding(),
+    ),
+    GetPage(
+      name: '/agent/home',
+      page: () => AgentHomeScreen(),
+    ),
+    // Agent routes
+    GetPage(
+      name: '/agent/reservations/create',
+      page: () => const AgentCreateReservationScreen(),
+      binding: AgentReservationBinding(), // This should work now
+    ),
+    GetPage(
+      name: '/agent/reservations',
+      page: () => const AgentReservationListScreen(),
+      binding: AgentReservationBinding(),
+    ),
+    GetPage(
+      name: '/agent/reservations/detail',
+      page: () => const AgentReservationDetailScreen(),
+      binding: AgentReservationBinding(),
+    ),
+    GetPage(
+      name: '/agent/customers/select',
+      page: () => const AgentCustomerSelectionScreen(),
+      binding: AgentReservationBinding(),
     ),
   ];
 }

@@ -40,7 +40,10 @@ class CustomTextField extends StatelessWidget {
       maxLength: maxLength,
       enabled: enabled,
       onChanged: onChanged,
-      style: style, // APPLY THE STYLE HERE
+      style: style?.copyWith(color: Colors.black) ?? const TextStyle(
+        color: Colors.black, // Explicitly set text color to black
+        fontSize: 16,
+      ),
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
@@ -55,8 +58,8 @@ class CustomTextField extends StatelessWidget {
           horizontal: 16,
           vertical: 16,
         ),
-        labelStyle: style?.copyWith(color: Colors.grey), // Optional: style label
-        hintStyle: style?.copyWith(color: Colors.grey), // Optional: style hint
+        labelStyle: style?.copyWith(color: Colors.grey) ?? const TextStyle(color: Colors.grey),
+        hintStyle: style?.copyWith(color: Colors.grey) ?? const TextStyle(color: Colors.grey),
       ),
     );
   }

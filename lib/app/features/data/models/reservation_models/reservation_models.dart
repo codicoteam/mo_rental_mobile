@@ -163,6 +163,14 @@ class CreateReservationRequest {
   final String? notes;
   final String code; // REQUIRED FIELD
   final String? userId;
+  
+  // NEW AGENT FIELDS
+  final bool? createdByAgent;
+  final String? agentId;
+  final String? agentNotes;
+  final String? customerId;
+  final bool? overrideAvailability;
+  final String? priorityLevel; // normal, high, urgent
 
   CreateReservationRequest({
     required this.createdChannel,
@@ -174,23 +182,39 @@ class CreateReservationRequest {
     this.paymentSummary,
     required this.driverSnapshot,
     this.notes,
-    required this.code, // REQUIRED
+    required this.code,
     this.userId,
+    
+    // New agent fields
+    this.createdByAgent = false,
+    this.agentId,
+    this.agentNotes,
+    this.customerId,
+    this.overrideAvailability = false,
+    this.priorityLevel = 'normal',
   });
 
   Map<String, dynamic> toJson() => {
-        "created_channel": createdChannel,
-        "vehicle_id": vehicleId,
-        if (vehicleModelId != null) "vehicle_model_id": vehicleModelId,
-        "code": code, // REQUIRED
-        "pickup": pickup.toJson(),
-        "dropoff": dropoff.toJson(),
-        "pricing": pricing.toJson(),
-        if (paymentSummary != null) "payment_summary": paymentSummary!.toJson(),
-        "driver_snapshot": driverSnapshot.toJson(),
-        if (notes != null && notes!.isNotEmpty) "notes": notes,
-        if (userId != null) "user_id": userId,
-      };
+    "created_channel": createdChannel,
+    "vehicle_id": vehicleId,
+    if (vehicleModelId != null) "vehicle_model_id": vehicleModelId,
+    "code": code,
+    "pickup": pickup.toJson(),
+    "dropoff": dropoff.toJson(),
+    "pricing": pricing.toJson(),
+    if (paymentSummary != null) "payment_summary": paymentSummary!.toJson(),
+    "driver_snapshot": driverSnapshot.toJson(),
+    if (notes != null && notes!.isNotEmpty) "notes": notes,
+    if (userId != null) "user_id": userId,
+    
+    // New agent fields
+    if (createdByAgent != null) "created_by_agent": createdByAgent,
+    if (agentId != null) "agent_id": agentId,
+    if (agentNotes != null) "agent_notes": agentNotes,
+    if (customerId != null) "customer_id": customerId,
+    if (overrideAvailability != null) "override_availability": overrideAvailability,
+    if (priorityLevel != null) "priority_level": priorityLevel,
+  };
 }
 
 class BranchTime {
@@ -525,6 +549,15 @@ class Reservation {
   final DateTime createdAt;
   final DateTime updatedAt;
   final VehicleInfo? vehicleDetails;
+  
+  // NEW AGENT FIELDS
+  final bool? createdByAgent;
+  final String? agentId;
+  final String? agentNotes;
+  final bool? overrideAvailability;
+  final String? priorityLevel;
+  final String? bookingChannel;
+  final String? vehicleModelId;
 
   Reservation({
     required this.id,
@@ -541,6 +574,15 @@ class Reservation {
     required this.createdAt,
     required this.updatedAt,
     this.vehicleDetails,
+    
+    // New agent fields
+    this.createdByAgent,
+    this.agentId,
+    this.agentNotes,
+    this.overrideAvailability,
+    this.priorityLevel,
+    this.bookingChannel,
+    this.vehicleModelId,
   });
 
   factory Reservation.fromJson(Map<String, dynamic> json) {
@@ -610,9 +652,13 @@ class Reservation {
 
       // Extract vehicle details if available
       VehicleInfo? vehicleDetails;
+      String? vehicleModelId;
       if (json['vehicle_id'] is Map) {
         final vehicle = json['vehicle_id'] as Map<String, dynamic>;
         try {
+          vehicleModelId = json['vehicle_model_id']?.toString() ?? 
+                          vehicle['vehicle_model_id']?.toString();
+          
           vehicleDetails = VehicleInfo.fromJson({
             '_id': vehicle['_id'] ?? '',
             'make': json['vehicle_model_id']?['make'] ?? '',
@@ -629,6 +675,16 @@ class Reservation {
           print('⚠️ Error parsing vehicle details: $e');
         }
       }
+
+      // Extract agent fields
+      final createdByAgent = json['created_by_agent']?.toString().toLowerCase() == 'true' || 
+                            json['created_by_agent'] == true;
+      final agentId = json['agent_id']?.toString();
+      final agentNotes = json['agent_notes']?.toString();
+      final overrideAvailability = json['override_availability']?.toString().toLowerCase() == 'true' || 
+                                  json['override_availability'] == true;
+      final priorityLevel = json['priority_level']?.toString() ?? 'normal';
+      final bookingChannel = json['booking_channel']?.toString() ?? json['created_channel']?.toString();
 
       final reservation = Reservation(
         id: json['_id'] ?? json['id'] ?? '',
@@ -649,6 +705,15 @@ class Reservation {
             ? DateTime.parse(json['updated_at'].toString())
             : DateTime.now(),
         vehicleDetails: vehicleDetails,
+        vehicleModelId: vehicleModelId,
+        
+        // Agent fields
+        createdByAgent: createdByAgent,
+        agentId: agentId,
+        agentNotes: agentNotes,
+        overrideAvailability: overrideAvailability,
+        priorityLevel: priorityLevel,
+        bookingChannel: bookingChannel,
       );
 
       print('✅ Successfully parsed reservation: ${reservation.id}');
@@ -657,6 +722,7 @@ class Reservation {
       print('   Dates: ${reservation.startDate} - ${reservation.endDate}');
       print('   Status: ${reservation.status}');
       print('   Amount: \$${reservation.totalAmount}');
+      print('   Agent Booking: $createdByAgent');
       
       return reservation;
     } catch (e, stackTrace) {
@@ -675,27 +741,35 @@ class Reservation {
         totalAmount: 0.0,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        createdByAgent: false,
       );
     }
   }
 
   Map<String, dynamic> toJson() => {
-        "id": id,
-        "vehicle_id": vehicleId,
-        "user_id": userId,
-        "start_date": startDate.toIso8601String(),
-        "end_date": endDate.toIso8601String(),
-        "status": status,
-        "total_amount": totalAmount,
-        if (specialInstructions != null)
-          "special_instructions": specialInstructions,
-        if (pickupLocation != null) "pickup_location": pickupLocation,
-        if (dropoffLocation != null) "dropoff_location": dropoffLocation,
-        if (promoCode != null) "promo_code": promoCode,
-        "created_at": createdAt.toIso8601String(),
-        "updated_at": updatedAt.toIso8601String(),
-        if (vehicleDetails != null) "vehicle_details": vehicleDetails!.toJson(),
-      };
+    "id": id,
+    "vehicle_id": vehicleId,
+    "user_id": userId,
+    "start_date": startDate.toIso8601String(),
+    "end_date": endDate.toIso8601String(),
+    "status": status,
+    "total_amount": totalAmount,
+    if (specialInstructions != null) "special_instructions": specialInstructions,
+    if (pickupLocation != null) "pickup_location": pickupLocation,
+    if (dropoffLocation != null) "dropoff_location": dropoffLocation,
+    if (promoCode != null) "promo_code": promoCode,
+    "created_at": createdAt.toIso8601String(),
+    "updated_at": updatedAt.toIso8601String(),
+    if (vehicleDetails != null) "vehicle_details": vehicleDetails!.toJson(),
+    // Agent fields
+    if (createdByAgent != null) "created_by_agent": createdByAgent,
+    if (agentId != null) "agent_id": agentId,
+    if (agentNotes != null) "agent_notes": agentNotes,
+    if (overrideAvailability != null) "override_availability": overrideAvailability,
+    if (priorityLevel != null) "priority_level": priorityLevel,
+    if (bookingChannel != null) "booking_channel": bookingChannel,
+    if (vehicleModelId != null) "vehicle_model_id": vehicleModelId,
+  };
 
   int get durationInDays => endDate.difference(startDate).inDays;
 

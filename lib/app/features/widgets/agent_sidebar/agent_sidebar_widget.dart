@@ -3,21 +3,21 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../../routes/app_routes.dart';
 
-class SidebarWidget extends StatefulWidget {
+class AgentSidebarWidget extends StatefulWidget {
   final Widget child;
   final bool initiallyOpen;
 
-  const SidebarWidget({
+  const AgentSidebarWidget({
     super.key,
     required this.child,
     this.initiallyOpen = false,
   });
 
   @override
-  State<SidebarWidget> createState() => _SidebarWidgetState();
+  State<AgentSidebarWidget> createState() => _AgentSidebarWidgetState();
 }
 
-class _SidebarWidgetState extends State<SidebarWidget>
+class _AgentSidebarWidgetState extends State<AgentSidebarWidget>
     with SingleTickerProviderStateMixin {
   final GetStorage storage = GetStorage();
   bool _isSidebarOpen = false;
@@ -27,91 +27,49 @@ class _SidebarWidgetState extends State<SidebarWidget>
 
   final List<SidebarItem> _sidebarItems = [
     SidebarItem(
-      icon: Icons.home_rounded,
-      title: 'Home',
-      route: '/home',
-    ),
-    SidebarItem(
-      icon: Icons.directions_car_rounded,
-      title: 'Vehicle Models',
-      route: '/vehicles/models',
-    ),
-    SidebarItem(
-      icon: Icons.local_shipping_rounded,
-      title: 'Vehicle Fleet',
-      route: '/vehicles/fleet',
+      icon: Icons.dashboard_rounded,
+      title: 'Dashboard',
+      route: '/agent/home',
     ),
     SidebarItem(
       icon: Icons.drive_eta_rounded,
-      title: 'Available Drivers',
-      route: '/drivers/public',
+      title: 'Manage Drivers',
+      route: '/agent/drivers',
     ),
     SidebarItem(
-      icon: Icons.person_rounded,
-      title: 'My Driver Profile',
-      route: '/drivers/my-profile',
+      icon: Icons.directions_car_rounded,
+      title: 'Vehicle Inventory',
+      route: '/agent/vehicles',
+    ),
+    SidebarItem(
+      icon: Icons.calendar_month_rounded,
+      title: 'Reservations',
+      route: '/agent/reservations',
     ),
     SidebarItem(
       icon: Icons.business_rounded,
-      title: 'Branch Locations',
-      route: '/branches',
+      title: 'My Branch',
+      route: '/agent/branch',
     ),
     SidebarItem(
-      icon: Icons.near_me_rounded,
-      title: 'Nearby Branches',
-      route: '/branches/nearby',
+      icon: Icons.receipt_long_rounded,
+      title: 'Billing',
+      route: '/agent/billing',
     ),
     SidebarItem(
-      icon: Icons.search_rounded,
-      title: 'Check Availability',
-      route: '/reservations/availability',
+      icon: Icons.analytics_rounded,
+      title: 'Analytics',
+      route: '/agent/analytics',
     ),
     SidebarItem(
-      icon: Icons.add_circle_rounded,
-      title: 'Create Reservation',
-      route: '/reservations/create',
-    ),
-    SidebarItem(
-      icon: Icons.calendar_today_rounded,
-      title: 'My Bookings',
-      route: '/reservations/list',
-    ),
-    SidebarItem(
-      icon: Icons.chat_bubble_rounded,
-      title: 'Messages',
-      route: '/chat/conversations',
-      badgeCount: 0,
-    ),
-    SidebarItem(
-      icon: Icons.local_offer_rounded,
-      title: 'Promo Codes',
-      route: '/promo-codes',
-      badgeCount: 0,
-    ),
-    SidebarItem(
-      icon: Icons.favorite_rounded,
-      title: 'Favorites',
-      route: '/favorites',
-    ),
-    SidebarItem(
-      icon: Icons.history_rounded,
-      title: 'History',
-      route: '/history',
-    ),
-    SidebarItem(
-      icon: Icons.payment_rounded,
-      title: 'Payments',
-      route: '/payments',
+      icon: Icons.support_agent_rounded,
+      title: 'Customer Support',
+      route: '/agent/support',
     ),
     SidebarItem(
       icon: Icons.settings_rounded,
       title: 'Settings',
-      route: '/settings',
-    ),
-    SidebarItem(
-      icon: Icons.help_rounded,
-      title: 'Help & Support',
-      route: '/support',
+      route: '/agent/settings',
     ),
   ];
 
@@ -155,7 +113,6 @@ class _SidebarWidgetState extends State<SidebarWidget>
     });
 
     final item = _sidebarItems[index];
-
     _toggleSidebar();
 
     Future.delayed(const Duration(milliseconds: 200), () {
@@ -166,59 +123,18 @@ class _SidebarWidgetState extends State<SidebarWidget>
   void _handleNavigation(SidebarItem item) {
     try {
       switch (item.route) {
-        case '/reservations/list':
-          Get.toNamed(AppRoutes.reservationList);
+        case '/agent/home':
+          Get.offAllNamed('/agent/home');
           break;
-        case '/reservations/detail':
-          Get.toNamed(AppRoutes.reservationDetail);
+        case '/agent/reservations':
+          // Navigate to agent reservations list
+          Get.offAllNamed('/agent/reservations');
           break;
-        case '/reservations/availability':
-          Get.toNamed(AppRoutes.checkAvailability);
-          break;
-        case '/reservations/create':
-          Get.toNamed(AppRoutes.createReservation);
-          break;
-        case '/promo-codes':
-          Get.toNamed(AppRoutes.promoCodes);
-          break;
-        case '/chat/conversations':
+        case '/agent/support':
           Get.toNamed(AppRoutes.chatConversations);
           break;
-        case '/home':
-          Get.offAllNamed('/');
-          break;
-        case '/branches':
-          Get.toNamed(AppRoutes.branches);
-          break;
-        case '/branches/nearby':
-          Get.toNamed(AppRoutes.nearbyBranches);
-          break;
-        case '/vehicles/models':
-          Get.toNamed(AppRoutes.vehicleModels);
-          break;
-        case '/vehicles/fleet':
-          Get.toNamed(AppRoutes.vehicleFleet);
-          break;
-        case '/drivers/public':
-          Get.toNamed(AppRoutes.publicDrivers);
-          break;
-        case '/drivers/my-profile':
-          Get.toNamed(AppRoutes.myDriverProfile);
-          break;
-        case '/favorites':
-        case '/history':
-        case '/payments':
-        case '/settings':
-        case '/support':
-          Get.snackbar(
-            'Coming Soon',
-            '${item.title} feature is under development',
-            snackPosition: SnackPosition.BOTTOM,
-            duration: const Duration(seconds: 2),
-          );
-          break;
         default:
-          debugPrint('Route not handled: ${item.route}');
+          // For other routes that aren't implemented yet
           Get.snackbar(
             'Coming Soon',
             '${item.title} feature is under development',
@@ -241,8 +157,9 @@ class _SidebarWidgetState extends State<SidebarWidget>
   @override
   Widget build(BuildContext context) {
     final userData = storage.read('user_data') ?? {};
-    final userName = userData['full_name'] ?? 'Guest';
-    final userEmail = userData['email'] ?? 'guest@example.com';
+    final userName = userData['full_name'] ?? 'Agent';
+    final userEmail = userData['email'] ?? 'agent@example.com';
+    final branchName = userData['branch_name'] ?? 'Main Branch';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -270,7 +187,7 @@ class _SidebarWidgetState extends State<SidebarWidget>
               ),
             ),
 
-          // Premium Sidebar
+          // Sidebar
           AnimatedBuilder(
             animation: _animation,
             builder: (context, child) {
@@ -285,7 +202,7 @@ class _SidebarWidgetState extends State<SidebarWidget>
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: Color(0xFF047BC1).withOpacity(0.15),
+                          color: const Color(0xFF10B981).withOpacity(0.15),
                           blurRadius: 30,
                           spreadRadius: 0,
                           offset: const Offset(8, 0),
@@ -299,7 +216,7 @@ class _SidebarWidgetState extends State<SidebarWidget>
                           child: SingleChildScrollView(
                             child: Column(
                               children: [
-                                // Premium Header with Gradient
+                                // Header
                                 Container(
                                   padding: EdgeInsets.only(
                                     top: MediaQuery.of(context).padding.top + 24,
@@ -312,17 +229,16 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
-                                        Color(0xFF047BC1),
-                                        Color(0xFF4F46E5),
-                                        Color(0xFF3730A3),
+                                        const Color(0xFF10B981),
+                                        const Color(0xFF0EA5E9),
+                                        const Color(0xFF6366F1),
                                       ],
                                     ),
                                   ),
                                   child: Column(
                                     children: [
-                                      // Avatar with Premium Ring
                                       Container(
-                                        padding: EdgeInsets.all(4),
+                                        padding: const EdgeInsets.all(4),
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
                                           gradient: LinearGradient(
@@ -349,13 +265,10 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                           child: CircleAvatar(
                                             radius: 42,
                                             backgroundColor: Colors.white,
-                                            child: Text(
-                                              userName[0].toUpperCase(),
-                                              style: TextStyle(
-                                                fontSize: 32,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF047BC1),
-                                              ),
+                                            child: Icon(
+                                              Icons.person_outline_rounded,
+                                              size: 38,
+                                              color: const Color(0xFF10B981),
                                             ),
                                           ),
                                         ),
@@ -383,7 +296,44 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 12),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF10B981).withOpacity(0.25),
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(
+                                            color: Colors.white.withOpacity(0.35),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.business_rounded,
+                                              size: 16,
+                                              color: Colors.white,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              branchName,
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600,
+                                                letterSpacing: 0.2,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 20,
@@ -401,13 +351,13 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Icon(
-                                              Icons.star_rounded,
+                                              Icons.verified_rounded,
                                               size: 17,
-                                              color: Colors.amber.shade200,
+                                              color: Colors.white,
                                             ),
                                             const SizedBox(width: 7),
                                             const Text(
-                                              'Premium Member',
+                                              'Verified Agent',
                                               style: TextStyle(
                                                 fontSize: 13,
                                                 color: Colors.white,
@@ -447,8 +397,8 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                               gradient: isSelected
                                                   ? LinearGradient(
                                                       colors: [
-                                                        Color(0xFF047BC1).withOpacity(0.15),
-                                                        Color(0xFF4F46E5).withOpacity(0.12),
+                                                        const Color(0xFF10B981).withOpacity(0.15),
+                                                        const Color(0xFF0EA5E9).withOpacity(0.12),
                                                       ],
                                                       begin: Alignment.topLeft,
                                                       end: Alignment.bottomRight,
@@ -457,7 +407,7 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                               borderRadius: BorderRadius.circular(16),
                                               border: isSelected
                                                   ? Border.all(
-                                                      color: Color(0xFF047BC1).withOpacity(0.25),
+                                                      color: const Color(0xFF10B981).withOpacity(0.25),
                                                       width: 1.5,
                                                     )
                                                   : null,
@@ -475,8 +425,8 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                                       gradient: isSelected
                                                           ? LinearGradient(
                                                               colors: [
-                                                                Color(0xFF047BC1).withOpacity(0.25),
-                                                                Color(0xFF4F46E5).withOpacity(0.2),
+                                                                const Color(0xFF10B981).withOpacity(0.25),
+                                                                const Color(0xFF0EA5E9).withOpacity(0.2),
                                                               ],
                                                               begin: Alignment.topLeft,
                                                               end: Alignment.bottomRight,
@@ -490,7 +440,7 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                                     child: Icon(
                                                       item.icon,
                                                       color: isSelected
-                                                          ? Color(0xFF047BC1)
+                                                          ? const Color(0xFF10B981)
                                                           : Colors.grey.shade700,
                                                       size: 23,
                                                     ),
@@ -505,43 +455,12 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                                             ? FontWeight.w600
                                                             : FontWeight.w500,
                                                         color: isSelected
-                                                            ? Color(0xFF047BC1)
-                                                            : Color(0xFF1A1A1A),
+                                                            ? const Color(0xFF10B981)
+                                                            : const Color(0xFF1A1A1A),
                                                         letterSpacing: isSelected ? 0.1 : 0,
                                                       ),
                                                     ),
                                                   ),
-                                                  if (item.badgeCount != null && item.badgeCount! > 0)
-                                                    Container(
-                                                      padding: const EdgeInsets.symmetric(
-                                                        horizontal: 10,
-                                                        vertical: 5,
-                                                      ),
-                                                      decoration: BoxDecoration(
-                                                        gradient: LinearGradient(
-                                                          colors: [
-                                                            Color(0xFF047BC1),
-                                                            Color(0xFF4F46E5),
-                                                          ],
-                                                        ),
-                                                        borderRadius: BorderRadius.circular(12),
-                                                        boxShadow: [
-                                                          BoxShadow(
-                                                            color: Color(0xFF047BC1).withOpacity(0.3),
-                                                            blurRadius: 8,
-                                                            offset: Offset(0, 2),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      child: Text(
-                                                        item.badgeCount.toString(),
-                                                        style: const TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 12,
-                                                          fontWeight: FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ),
                                                 ],
                                               ),
                                             ),
@@ -552,7 +471,7 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                   },
                                 ),
 
-                                // Premium Logout Button
+                                // Logout Button
                                 Padding(
                                   padding: const EdgeInsets.all(20),
                                   child: Container(
@@ -574,7 +493,7 @@ class _SidebarWidgetState extends State<SidebarWidget>
                                         BoxShadow(
                                           color: Colors.red.withOpacity(0.1),
                                           blurRadius: 12,
-                                          offset: Offset(0, 4),
+                                          offset: const Offset(0, 4),
                                         ),
                                       ],
                                     ),
@@ -627,7 +546,7 @@ class _SidebarWidgetState extends State<SidebarWidget>
             },
           ),
 
-          // Premium Menu Button
+          // Menu Button
           Positioned(
             top: MediaQuery.of(context).padding.top + 12,
             left: 12,
@@ -635,8 +554,8 @@ class _SidebarWidgetState extends State<SidebarWidget>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Color(0xFF047BC1),
-                    Color(0xFF4F46E5),
+                    const Color(0xFF10B981),
+                    const Color(0xFF0EA5E9),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -644,7 +563,7 @@ class _SidebarWidgetState extends State<SidebarWidget>
                 borderRadius: BorderRadius.circular(15),
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0xFF047BC1).withOpacity(0.35),
+                    color: const Color(0xFF10B981).withOpacity(0.35),
                     blurRadius: 12,
                     spreadRadius: 0,
                     offset: const Offset(0, 4),

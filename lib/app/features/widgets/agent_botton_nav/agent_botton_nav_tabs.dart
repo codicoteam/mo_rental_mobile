@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
-import '../../modules/agent/views/agent_home_screen.dart';
+import '../../modules/customer/views/customer_home_screen.dart';
 import '../../modules/auth/controllers/auth_controller.dart';
 import '../../modules/bindings/rate_plan_binding.dart';
 import '../../modules/car_listing/views/car_listing_screen.dart';
@@ -30,7 +30,7 @@ class _MainNavigationState extends State<MainNavigation>
   late Animation<Offset> _slideAnimation;
 
   final List<Widget> _screens = [
-    HomeScreen(),
+    CustomerHomeScreen(),
     CarListingScreen(),
     RatePlansScreen(),
     ProfileScreen(),

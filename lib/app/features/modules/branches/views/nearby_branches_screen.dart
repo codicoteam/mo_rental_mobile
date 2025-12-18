@@ -994,7 +994,7 @@ class _NearbyBranchesScreenState extends State<NearbyBranchesScreen>
               ),
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }

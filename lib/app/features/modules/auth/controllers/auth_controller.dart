@@ -125,6 +125,7 @@ class AuthController extends GetxController {
   }
 
   // Login Method
+
   Future<api_models.ApiResponse<LoginResponse>> login({
     required String email,
     required String password,
@@ -170,14 +171,27 @@ class AuthController extends GetxController {
         print('🎯 Status: ${response.data!.user.status}');
         print('✅ Email Verified: ${response.data!.user.emailVerified}');
 
+        // Extract user role
+        final String userRole = response.data!.user.roles.isNotEmpty 
+            ? response.data!.user.roles[0].toLowerCase() 
+            : 'customer';
+        
+        print('👤 User Role: $userRole');
+
         // Check if email is verified
         if (!response.data!.user.emailVerified) {
           print('⚠️ Email not verified, redirecting to verification');
           _storage.write('pending_verification_email', email);
           Get.offNamed('/verify-email', arguments: {'email': email});
         } else {
-          print('✅ Email verified, redirecting to home');
-          Get.offAllNamed('/main');
+          print('✅ Email verified, navigating based on role');
+          
+          // Navigate based on role - ADD THIS
+          if (userRole.contains('agent') || userRole.contains('admin')) {
+            Get.offAllNamed('/agent/home');  // Go to agent dashboard
+          } else {
+            Get.offAllNamed('/main');  // Go to customer home (main navigation)
+          }
         }
       } else {
         errorMessage.value = response.message;
@@ -221,6 +235,15 @@ class AuthController extends GetxController {
       );
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  // Add this method to AuthController
+  void navigateBasedOnRole(String role) {
+    if (role.contains('agent') || role.contains('admin')) {
+      Get.offAllNamed('/agent/home');  // Agent dashboard
+    } else {
+      Get.offAllNamed('/main');  // Customer dashboard
     }
   }
 

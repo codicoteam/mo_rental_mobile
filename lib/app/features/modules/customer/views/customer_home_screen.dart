@@ -3,12 +3,14 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:iconsax/iconsax.dart';
 import '../../../data/services/rate_plan_service.dart';
-import '../../../widgets/agent_sidebar/agent_sidebar_widget.dart';
+import '../../../widgets/sidebar_widget/customer_sidebar_widget.dart';
+import '../../car_details/views/car_detail_screen.dart';
+import '../../promo_code/views/promo_code_screen.dart';
 import '../../chat/views/conversations_list_screen.dart';
 import '../../rate_plans/controllers/rate_plan_controller.dart';
 
-class AgentHomeScreen extends StatelessWidget {
-  const AgentHomeScreen({super.key});
+class CustomerHomeScreen extends StatelessWidget {
+  const CustomerHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,76 +23,74 @@ class AgentHomeScreen extends StatelessWidget {
       }
     });
 
-    return AgentSidebarWidget( 
+    return CustomerSidebarWidget(
       initiallyOpen: false,
       child: _HomeContent(),
     );
   }
 }
 
-
 class _HomeContent extends StatelessWidget {
   _HomeContent();
 
   final GetStorage storage = GetStorage();
 
-  // MODIFIED: Agent-specific navigation items
   final List<HomeNavItem> _navItems = [
     HomeNavItem(
-      icon: Iconsax.driver,
-      title: 'Manage Drivers',
-      route: '/agent/drivers',
-      color: Color(0xFF10B981), // Emerald green for agents
-      gradient: [Color(0xFF10B981), Color(0xFF34D399)], // Green gradient
+      icon: Iconsax.driving,
+      title: 'Available Drivers',
+      route: '/drivers/public',
+      color: Color(0xFF047BC1),
+      gradient: [Color(0xFF047BC1), Color(0xFF0A9FE8)],
+    ),
+    HomeNavItem(
+      icon: Iconsax.profile_2user,
+      title: 'My Driver Profile',
+      route: '/drivers/my-profile',
+      color: Color(0xFF4F46E5),
+      gradient: [Color(0xFF4F46E5), Color(0xFF6366F1)],
     ),
     HomeNavItem(
       icon: Iconsax.car,
-      title: 'Vehicle Inventory',
-      route: '/agent/vehicles',
-      color: Color(0xFF6366F1), // Indigo
-      gradient: [Color(0xFF6366F1), Color(0xFF8B5CF6)], // Indigo to purple
+      title: 'Vehicle Models',
+      route: '/vehicles/models',
+      color: Color(0xFF3730A3),
+      gradient: [Color(0xFF3730A3), Color(0xFF4F46E5)],
     ),
     HomeNavItem(
-      icon: Iconsax.calendar,
-      title: 'Reservations',
-      route: '/agent/reservations',
-      color: Color(0xFFF59E0B), // Amber
-      gradient: [Color(0xFFF59E0B), Color(0xFFFBBF24)], // Amber gradient
+      icon: Iconsax.ship,
+      title: 'Vehicle Fleet',
+      route: '/vehicles/fleet',
+      color: Color(0xFF047BC1),
+      gradient: [Color(0xFF047BC1), Color(0xFF06A8E8)],
     ),
     HomeNavItem(
       icon: Iconsax.building,
-      title: 'My Branch',
-      route: '/agent/branch',
-      color: Color(0xFFEF4444), // Red
-      gradient: [Color(0xFFEF4444), Color(0xFFF87171)], // Red gradient
+      title: 'Branches',
+      route: '/branches',
+      color: Color(0xFF4F46E5),
+      gradient: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
     ),
     HomeNavItem(
-      icon: Iconsax.receipt,
-      title: 'Billing',
-      route: '/agent/billing',
-      color: Color(0xFF8B5CF6), // Purple
-      gradient: [Color(0xFF8B5CF6), Color(0xFFA78BFA)], // Purple gradient
+      icon: Iconsax.location,
+      title: 'Nearby Branches',
+      route: '/branches/nearby',
+      color: Color(0xFF3730A3),
+      gradient: [Color(0xFF3730A3), Color(0xFF4F46E5)],
     ),
     HomeNavItem(
-      icon: Iconsax.chart,
-      title: 'Analytics',
-      route: '/agent/analytics',
-      color: Color(0xFF0EA5E9), // Sky blue
-      gradient: [Color(0xFF0EA5E9), Color(0xFF38BDF8)], // Sky blue gradient
+      icon: Iconsax.search_status,
+      title: 'Check Availability',
+      route: '/reservations/availability',
+      color: Color(0xFF047BC1),
+      gradient: [Color(0xFF047BC1), Color(0xFF0891D1)],
     ),
     HomeNavItem(
-      icon: Iconsax.message,
-      title: 'Customer Support',
-      route: '/agent/support',
-      color: Color(0xFFEC4899), // Pink
-      gradient: [Color(0xFFEC4899), Color(0xFFF472B6)], // Pink gradient
-    ),
-    HomeNavItem(
-      icon: Iconsax.setting,
-      title: 'Settings',
-      route: '/agent/settings',
-      color: Color(0xFF6B7280), // Gray
-      gradient: [Color(0xFF6B7280), Color(0xFF9CA3AF)], // Gray gradient
+      icon: Iconsax.add_square,
+      title: 'Create Reservation',
+      route: '/reservations/create',
+      color: Color(0xFF4F46E5),
+      gradient: [Color(0xFF4F46E5), Color(0xFF6366F1)],
     ),
   ];
 
@@ -104,7 +104,7 @@ class _HomeContent extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // MODIFIED: Agent-specific header with different theme
+            // Premium Header with Glassmorphism
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
@@ -112,9 +112,9 @@ class _HomeContent extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFF10B981), // Emerald green
-                    Color(0xFF0EA5E9), // Sky blue
-                    Color(0xFF6366F1), // Indigo
+                    Color(0xFF047BC1),
+                    Color(0xFF4F46E5),
+                    Color(0xFF3730A3),
                   ],
                 ),
               ),
@@ -185,7 +185,7 @@ class _HomeContent extends StatelessWidget {
                                     color: Colors.white,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Color(0xFF10B981).withOpacity(0.35),
+                                        color: Color(0xFF047BC1).withOpacity(0.35),
                                         blurRadius: 14,
                                         spreadRadius: 2,
                                       ),
@@ -194,10 +194,15 @@ class _HomeContent extends StatelessWidget {
                                   child: CircleAvatar(
                                     radius: 30,
                                     backgroundColor: Colors.white,
-                                    child: Icon(
-                                      Iconsax.profile_tick,
-                                      size: 32,
-                                      color: Color(0xFF10B981),
+                                    child: Text(
+                                      userData['full_name'] != null
+                                          ? userData['full_name'][0].toUpperCase()
+                                          : 'G',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF047BC1),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -209,7 +214,7 @@ class _HomeContent extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Agent Dashboard',
+                                      'Welcome back,',
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: Colors.white.withOpacity(0.85),
@@ -219,7 +224,7 @@ class _HomeContent extends StatelessWidget {
                                     ),
                                     SizedBox(height: 5),
                                     Text(
-                                      userData['full_name'] ?? 'Agent',
+                                      userData['full_name'] ?? 'Guest User',
                                       style: TextStyle(
                                         fontSize: 23,
                                         fontWeight: FontWeight.bold,
@@ -228,7 +233,7 @@ class _HomeContent extends StatelessWidget {
                                         height: 1.1,
                                       ),
                                     ),
-                                    if (userData['branch_name'] != null)
+                                    if (userData['status'] != null)
                                       Container(
                                         margin: EdgeInsets.only(top: 10),
                                         padding: EdgeInsets.symmetric(
@@ -236,49 +241,44 @@ class _HomeContent extends StatelessWidget {
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Color(0xFF10B981).withOpacity(0.25),
+                                          color: userData['status'] == 'active'
+                                              ? Colors.green.withOpacity(0.25)
+                                              : Colors.orange.withOpacity(0.25),
                                           borderRadius: BorderRadius.circular(10),
                                           border: Border.all(
-                                            color: Color(0xFF10B981).withOpacity(0.8),
+                                            color: userData['status'] == 'active'
+                                                ? Colors.greenAccent.withOpacity(0.8)
+                                                : Colors.orangeAccent.withOpacity(0.8),
                                             width: 1.2,
                                           ),
                                         ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Iconsax.building,
-                                              size: 12,
-                                              color: Colors.white,
-                                            ),
-                                            SizedBox(width: 6),
-                                            Text(
-                                              userData['branch_name'].toString(),
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
-                                                letterSpacing: 0.3,
-                                              ),
-                                            ),
-                                          ],
+                                        child: Text(
+                                          userData['status'].toString().toUpperCase(),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: userData['status'] == 'active'
+                                                ? Colors.greenAccent
+                                                : Colors.orangeAccent,
+                                            letterSpacing: 0.9,
+                                          ),
                                         ),
                                       ),
                                   ],
                                 ),
                               ),
                               
-                              // MODIFIED: Agent Quick Actions
+                              // Quick Actions
                               Column(
                                 children: [
                                   _buildQuickActionButton(
-                                    icon: Iconsax.notification,
-                                    onTap: () => Get.toNamed('/agent/notifications'),
+                                    icon: Iconsax.message,
+                                    onTap: () => Get.to(() => ConversationsListScreen()),
                                   ),
                                   SizedBox(height: 14),
                                   _buildQuickActionButton(
-                                    icon: Iconsax.message,
-                                    onTap: () => Get.to(() => ConversationsListScreen()),
+                                    icon: Iconsax.ticket_discount,
+                                    onTap: () => Get.to(() => PromoCodeScreen()),
                                   ),
                                 ],
                               ),
@@ -288,7 +288,7 @@ class _HomeContent extends StatelessWidget {
 
                         SizedBox(height: 28),
 
-                        // MODIFIED: Agent Search Bar
+                        // Premium Search Bar
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 22, vertical: 5),
                           decoration: BoxDecoration(
@@ -323,7 +323,7 @@ class _HomeContent extends StatelessWidget {
                                     fontWeight: FontWeight.w500,
                                   ),
                                   decoration: InputDecoration(
-                                    hintText: "Search reservations, vehicles...",
+                                    hintText: "Find your perfect ride...",
                                     hintStyle: TextStyle(
                                       color: Colors.white.withOpacity(0.65),
                                       fontSize: 15.5,
@@ -362,7 +362,7 @@ class _HomeContent extends StatelessWidget {
 
             SizedBox(height: 34),
 
-            // MODIFIED: Today's Stats Section
+            // Featured Cars Section
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 24),
               child: Column(
@@ -375,7 +375,7 @@ class _HomeContent extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Today's Overview",
+                            "Featured Cars",
                             style: TextStyle(
                               fontSize: 26,
                               fontWeight: FontWeight.bold,
@@ -385,7 +385,7 @@ class _HomeContent extends StatelessWidget {
                           ),
                           SizedBox(height: 6),
                           Text(
-                            "Your daily performance metrics",
+                            "Premium selection just for you",
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey.shade600,
@@ -396,26 +396,26 @@ class _HomeContent extends StatelessWidget {
                       ),
                       Container(
                         decoration: BoxDecoration(
-                          color: Color(0xFF10B981).withOpacity(0.12),
+                          color: Color(0xFF047BC1).withOpacity(0.12),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: Color(0xFF10B981).withOpacity(0.2),
+                            color: Color(0xFF047BC1).withOpacity(0.2),
                             width: 1,
                           ),
                         ),
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            onTap: () => Get.toNamed('/agent/analytics'),
+                            onTap: () {},
                             borderRadius: BorderRadius.circular(14),
                             child: Padding(
                               padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                               child: Row(
                                 children: [
                                   Text(
-                                    "Detailed View",
+                                    "View All",
                                     style: TextStyle(
-                                      color: Color(0xFF10B981),
+                                      color: Color(0xFF047BC1),
                                       fontWeight: FontWeight.w600,
                                       fontSize: 14,
                                       letterSpacing: 0.2,
@@ -425,7 +425,7 @@ class _HomeContent extends StatelessWidget {
                                   Icon(
                                     Iconsax.arrow_right_3,
                                     size: 17,
-                                    color: Color(0xFF10B981),
+                                    color: Color(0xFF047BC1),
                                   ),
                                 ],
                               ),
@@ -436,25 +436,37 @@ class _HomeContent extends StatelessWidget {
                     ],
                   ),
                   SizedBox(height: 24),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 2.5,
+                  SizedBox(
+                    height: 250,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: EdgeInsets.only(right: 4),
+                      children: [
+                        _buildCarCard(
+                          context,
+                          "assets/images/campbell-3ZUsNJhi_Ik-unsplash.jpg",
+                          "BMW M4",
+                          "\$129/day",
+                          rating: 4.8,
+                        ),
+                        SizedBox(width: 18),
+                        _buildCarCard(
+                          context,
+                          "assets/images/joshua-koblin-eqW1MPinEV4-unsplash.jpg",
+                          "Mercedes AMG",
+                          "\$149/day",
+                          rating: 4.9,
+                        ),
+                        SizedBox(width: 18),
+                        _buildCarCard(
+                          context,
+                          "assets/images/peter-broomfield-m3m-lnR90uM-unsplash.jpg",
+                          "Audi R8",
+                          "\$199/day",
+                          rating: 4.7,
+                        ),
+                      ],
                     ),
-                    itemCount: 4,
-                    itemBuilder: (context, index) {
-                      final stats = [
-                        {'title': 'Active Rentals', 'value': '12', 'color': Color(0xFF10B981), 'icon': Iconsax.car},
-                        {'title': 'Pending Approval', 'value': '5', 'color': Color(0xFFF59E0B), 'icon': Iconsax.clock},
-                        {'title': 'Revenue Today', 'value': '\$2,450', 'color': Color(0xFF6366F1), 'icon': Iconsax.dollar_circle},
-                        {'title': 'Available Cars', 'value': '18', 'color': Color(0xFF0EA5E9), 'icon': Iconsax.tick_circle},
-                      ];
-                      return _buildStatCard(stats[index]);
-                    },
                   ),
                 ],
               ),
@@ -472,7 +484,7 @@ class _HomeContent extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Quick Actions",
+                        "Quick Navigation",
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
@@ -482,7 +494,7 @@ class _HomeContent extends StatelessWidget {
                       ),
                       SizedBox(height: 6),
                       Text(
-                        "Manage your rental operations",
+                        "Access all features",
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey.shade600,
@@ -513,7 +525,7 @@ class _HomeContent extends StatelessWidget {
 
             SizedBox(height: 38),
 
-            // MODIFIED: Pending Approvals Banner
+            // Premium Promo Banner
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 24),
               child: Container(
@@ -521,8 +533,8 @@ class _HomeContent extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Color(0xFFF59E0B), // Amber
-                      Color(0xFFEC4899), // Pink
+                      Color(0xFF047BC1),
+                      Color(0xFF4F46E5),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -530,7 +542,7 @@ class _HomeContent extends StatelessWidget {
                   borderRadius: BorderRadius.circular(26),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFFF59E0B).withOpacity(0.45),
+                      color: Color(0xFF047BC1).withOpacity(0.45),
                       blurRadius: 28,
                       spreadRadius: 0,
                       offset: Offset(0, 12),
@@ -550,7 +562,7 @@ class _HomeContent extends StatelessWidget {
                         ),
                       ),
                       child: Icon(
-                        Iconsax.clock,
+                        Iconsax.ticket_discount,
                         size: 34,
                         color: Colors.white,
                       ),
@@ -561,7 +573,7 @@ class _HomeContent extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Pending Approvals',
+                            'Exclusive Offer!',
                             style: TextStyle(
                               fontSize: 19,
                               fontWeight: FontWeight.bold,
@@ -571,7 +583,7 @@ class _HomeContent extends StatelessWidget {
                           ),
                           SizedBox(height: 7),
                           Text(
-                            'You have 5 reservations waiting for your review',
+                            'Get 25% off on your first booking',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.white.withOpacity(0.92),
@@ -590,21 +602,14 @@ class _HomeContent extends StatelessWidget {
                                 width: 1,
                               ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Iconsax.warning_2, size: 13, color: Colors.white),
-                                SizedBox(width: 8),
-                                Text(
-                                  'URGENT: 2 high priority',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              'WELCOME25',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 1.3,
+                              ),
                             ),
                           ),
                         ],
@@ -618,7 +623,7 @@ class _HomeContent extends StatelessWidget {
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          onTap: () => Get.toNamed('/agent/reservations'),
+                          onTap: () => Get.to(() => PromoCodeScreen()),
                           borderRadius: BorderRadius.circular(100),
                           child: Padding(
                             padding: EdgeInsets.all(12),
@@ -638,7 +643,7 @@ class _HomeContent extends StatelessWidget {
 
             SizedBox(height: 38),
 
-            // MODIFIED: Recent Bookings
+            // Recent Activity with Glass Card
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 24),
               child: Column(
@@ -648,7 +653,7 @@ class _HomeContent extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Recent Bookings",
+                        "Recent Activity",
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
@@ -658,7 +663,7 @@ class _HomeContent extends StatelessWidget {
                       ),
                       SizedBox(height: 6),
                       Text(
-                        "Latest customer reservations",
+                        "Your latest transactions",
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey.shade600,
@@ -688,13 +693,12 @@ class _HomeContent extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        _buildBookingItem(
-                          customer: "John Smith",
-                          vehicle: "BMW M4",
-                          duration: "3 days",
-                          amount: "\$387",
-                          status: "active",
-                          statusColor: Color(0xFF10B981),
+                        _buildActivityItem(
+                          icon: Iconsax.car,
+                          title: "BMW M4 Booked",
+                          subtitle: "2 days • \$258 total",
+                          time: "2 hours ago",
+                          color: Color(0xFF047BC1),
                         ),
                         SizedBox(height: 22),
                         Divider(
@@ -703,13 +707,12 @@ class _HomeContent extends StatelessWidget {
                           thickness: 1,
                         ),
                         SizedBox(height: 22),
-                        _buildBookingItem(
-                          customer: "Sarah Johnson",
-                          vehicle: "Mercedes AMG",
-                          duration: "5 days",
-                          amount: "\$745",
-                          status: "pending",
-                          statusColor: Color(0xFFF59E0B),
+                        _buildActivityItem(
+                          icon: Iconsax.ticket_discount,
+                          title: "Promo Applied",
+                          subtitle: "SUMMER25 - 25% off",
+                          time: "Yesterday",
+                          color: Color(0xFF4F46E5),
                         ),
                         SizedBox(height: 22),
                         Divider(
@@ -718,13 +721,12 @@ class _HomeContent extends StatelessWidget {
                           thickness: 1,
                         ),
                         SizedBox(height: 22),
-                        _buildBookingItem(
-                          customer: "Michael Chen",
-                          vehicle: "Audi R8",
-                          duration: "2 days",
-                          amount: "\$398",
-                          status: "completed",
-                          statusColor: Color(0xFF6366F1),
+                        _buildActivityItem(
+                          icon: Iconsax.message,
+                          title: "Support Chat",
+                          subtitle: "Resolved: Payment issue",
+                          time: "2 days ago",
+                          color: Color(0xFF3730A3),
                         ),
                       ],
                     ),
@@ -738,13 +740,13 @@ class _HomeContent extends StatelessWidget {
         ),
       ),
 
-      // MODIFIED: Agent FAB
+      // Premium FAB with Glow
       floatingActionButton: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: Color(0xFF10B981).withOpacity(0.55),
+              color: Color(0xFF047BC1).withOpacity(0.55),
               blurRadius: 24,
               spreadRadius: 2,
               offset: Offset(0, 6),
@@ -753,14 +755,23 @@ class _HomeContent extends StatelessWidget {
         ),
         child: FloatingActionButton.extended(
           onPressed: () {
-            Get.toNamed('/agent/reservations/create');
+            Get.toNamed(
+              '/reservations/create',
+              arguments: {
+                'vehicleId': 'featured_car_001',
+                'vehicleName': 'Featured Vehicle',
+                'dailyRate': 99.0,
+                'startDate': DateTime.now(),
+                'endDate': DateTime.now().add(Duration(days: 2)),
+              },
+            );
           },
-          backgroundColor: Color(0xFF10B981),
+          backgroundColor: Color(0xFF047BC1),
           foregroundColor: Colors.white,
           elevation: 0,
           icon: Icon(Iconsax.add, size: 23),
           label: Text(
-            'New Rental',
+            'Book Now',
             style: TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 16,
@@ -799,70 +810,171 @@ class _HomeContent extends StatelessWidget {
             child: Icon(icon, size: 21, color: Colors.white),
           ),
         ),
-      )
+      ),
     );
   }
 
-  Widget _buildStatCard(Map<String, dynamic> stat) {
-    return Container(
-      padding: EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.1),
-          width: 1.5,
+  Widget _buildCarCard(
+    BuildContext context,
+    String image,
+    String name,
+    String price, {
+    double rating = 4.5,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        Get.to(() => CarDetailsScreen(carName: name, image: image));
+      },
+      child: Container(
+        width: 310,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(26),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.18),
+              blurRadius: 24,
+              spreadRadius: 0,
+              offset: Offset(0, 10),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 15,
-            spreadRadius: 0,
-            offset: Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: stat['color'].withOpacity(0.15),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: stat['color'].withOpacity(0.3),
-                width: 1,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(26),
+          child: Stack(
+            children: [
+              // Image
+              Positioned.fill(
+                child: Image.asset(
+                  image,
+                  fit: BoxFit.cover,
+                ),
               ),
-            ),
-            child: Icon(stat['icon'], size: 22, color: stat['color']),
-          ),
-          SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  stat['value'],
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A),
-                    letterSpacing: -0.5,
+              
+              // Gradient Overlay
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.25),
+                        Colors.black.withOpacity(0.88),
+                      ],
+                      stops: [0.35, 0.68, 1.0],
+                    ),
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  stat['title'],
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: Colors.grey.shade600,
-                    letterSpacing: 0.2,
+              ),
+              
+              // Premium Badge
+              Positioned(
+                top: 18,
+                right: 18,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.45),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.35),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.25),
+                        blurRadius: 12,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Iconsax.gas_station, size: 15, color: Colors.white),
+                      SizedBox(width: 7),
+                      Text(
+                        "Premium",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+              
+              // Car Info
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: EdgeInsets.all(22),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: -0.6,
+                        ),
+                      ),
+                      SizedBox(height: 14),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.18),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.25),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Iconsax.star1, size: 15, color: Colors.amber),
+                                SizedBox(width: 6),
+                                Text(
+                                  rating.toString(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            price,
+                            style: TextStyle(
+                              fontSize: 21,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: -0.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -870,8 +982,10 @@ class _HomeContent extends StatelessWidget {
   Widget _buildNavCard(HomeNavItem item) {
     return GestureDetector(
       onTap: () {
-        if (item.route == '/agent/support') {
+        if (item.route == '/chat/conversations') {
           Get.to(() => ConversationsListScreen());
+        } else if (item.route == '/promo-codes') {
+          Get.to(() => PromoCodeScreen());
         } else {
           try {
             Get.toNamed(item.route);
@@ -935,13 +1049,12 @@ class _HomeContent extends StatelessWidget {
     );
   }
 
-  Widget _buildBookingItem({
-    required String customer,
-    required String vehicle,
-    required String duration,
-    required String amount,
-    required String status,
-    required Color statusColor,
+  Widget _buildActivityItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String time,
+    required Color color,
   }) {
     return Row(
       children: [
@@ -950,86 +1063,65 @@ class _HomeContent extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                statusColor.withOpacity(0.18),
-                statusColor.withOpacity(0.08),
+                color.withOpacity(0.18),
+                color.withOpacity(0.08),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: statusColor.withOpacity(0.25),
+              color: color.withOpacity(0.25),
               width: 1.5,
             ),
           ),
-          child: Icon(Iconsax.car, size: 23, color: statusColor),
+          child: Icon(icon, size: 23, color: color),
         ),
         SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                customer,
+                title,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                  fontSize: 16,
                   letterSpacing: -0.2,
                   color: Color(0xFF1A1A1A),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-              SizedBox(height: 4),
+              SizedBox(height: 5),
               Text(
-                "$vehicle • $duration",
+                subtitle,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 14,
                   color: Colors.grey.shade600,
                   letterSpacing: 0.1,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
         ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              amount,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: Color(0xFF1A1A1A),
-                letterSpacing: -0.3,
-              ),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: Colors.grey.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.grey.withOpacity(0.12),
+              width: 1,
             ),
-            SizedBox(height: 4),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: statusColor.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-              child: Text(
-                status.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 9,
-                  color: statusColor,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.4,
-                ),
-              ),
+          ),
+          child: Text(
+            time,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.2,
             ),
-          ],
+          ),
         ),
       ],
     );

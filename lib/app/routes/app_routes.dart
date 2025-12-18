@@ -48,6 +48,14 @@ abstract class AppRoutes {
   static const createDriverProfile = '/drivers/create-profile';
   static const editDriverProfile = '/drivers/edit-profile';
 
+  // Agent Routes - USING lowerCamelCase
+  static const agentDashboard = '/agent/dashboard';
+  static const agentReservationCreate = '/agent/reservations/create';
+  static const agentReservationList = '/agent/reservations';
+  static const agentReservationDetail = '/agent/reservations/detail';
+  static const agentCustomerSelection = '/agent/customers/select';
+  
+
   // Helper method to get chat detail with parameters
   static String chatDetailWithId(String conversationId) {
     return '$chatDetail?id=$conversationId';
