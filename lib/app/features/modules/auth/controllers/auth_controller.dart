@@ -19,14 +19,15 @@ import '../../../data/models/user_profile_response/user_profile_response.dart';
 class AuthController extends GetxController {
   final AuthRepository _authRepository = AuthRepository();
   final GetStorage _storage = GetStorage();
-  
+
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
   final RxBool isUpdatingProfile = false.obs;
   final RxBool isDeletingAccount = false.obs;
   final RxBool isResettingPassword = false.obs; // ADD THIS LINE - it's missing!
-  
-  final Rx<UserProfileResponse?> currentUserProfile = Rx<UserProfileResponse?>(null);
+
+  final Rx<UserProfileResponse?> currentUserProfile =
+      Rx<UserProfileResponse?>(null);
   // Add this to your AuthController class
   @override
   void onInit() {
@@ -145,10 +146,19 @@ class AuthController extends GetxController {
       _printDebugInfo('LOGIN', request.toJson(), response);
 
       if (response.success && response.data != null) {
-        // Store token and user data
-        _storage.write('auth_token', response.data!.token);
+        // Store token in MULTIPLE locations for compatibility
+        final token = response.data!.token;
+        _storage.write('auth_token', token);
+        _storage.write('access_token', token); // Add this
+        _storage.write('token', token); // Add this
+
+        // Also store in user_data for consistency
+        final userJson = response.data!.user.toJson();
+        userJson['token'] = token; // Add token to user_data
+        userJson['access_token'] = token; // Add this too
+
+        _storage.write('user_data', userJson);
         _storage.write('user_email', email);
-        _storage.write('user_data', response.data!.user.toJson());
 
         // Set current user profile from login response
         currentUserProfile.value = UserProfileResponse(
@@ -164,18 +174,21 @@ class AuthController extends GetxController {
           updatedAt: response.data!.user.updatedAt,
         );
 
-        print('✅ LOGIN SUCCESSFUL');
-        print('🔐 Token stored: ${response.data!.token.substring(0, 20)}...');
+        print('✅ LOGIN SUCCESSFUL - Token stored in multiple locations');
+        print('   auth_token: ${token.substring(0, 20)}...');
+        print('   access_token: ${token.substring(0, 20)}...');
+        print('   token: ${token.substring(0, 20)}...');
+        print('   user_data[token]: ${token.substring(0, 20)}...');
         print('👤 User: ${response.data!.user.fullName}');
         print('📞 Phone: ${response.data!.user.phone}');
         print('🎯 Status: ${response.data!.user.status}');
         print('✅ Email Verified: ${response.data!.user.emailVerified}');
 
         // Extract user role
-        final String userRole = response.data!.user.roles.isNotEmpty 
-            ? response.data!.user.roles[0].toLowerCase() 
+        final String userRole = response.data!.user.roles.isNotEmpty
+            ? response.data!.user.roles[0].toLowerCase()
             : 'customer';
-        
+
         print('👤 User Role: $userRole');
 
         // Check if email is verified
@@ -185,12 +198,12 @@ class AuthController extends GetxController {
           Get.offNamed('/verify-email', arguments: {'email': email});
         } else {
           print('✅ Email verified, navigating based on role');
-          
-          // Navigate based on role - ADD THIS
+
+          // Navigate based on role
           if (userRole.contains('agent') || userRole.contains('admin')) {
-            Get.offAllNamed('/agent/home');  // Go to agent dashboard
+            Get.offAllNamed('/agent/home'); // Go to agent dashboard
           } else {
-            Get.offAllNamed('/main');  // Go to customer home (main navigation)
+            Get.offAllNamed('/main'); // Go to customer home (main navigation)
           }
         }
       } else {
@@ -241,9 +254,9 @@ class AuthController extends GetxController {
   // Add this method to AuthController
   void navigateBasedOnRole(String role) {
     if (role.contains('agent') || role.contains('admin')) {
-      Get.offAllNamed('/agent/home');  // Agent dashboard
+      Get.offAllNamed('/agent/home'); // Agent dashboard
     } else {
-      Get.offAllNamed('/main');  // Customer dashboard
+      Get.offAllNamed('/main'); // Customer dashboard
     }
   }
 
@@ -268,15 +281,29 @@ class AuthController extends GetxController {
       _printDebugInfo('EMAIL VERIFICATION', request.toJson(), response);
 
       if (response.success && response.data != null) {
-        // Store token
-        _storage.write('auth_token', response.data!.token);
+        // Store token in MULTIPLE locations for compatibility
+        final token = response.data!.token;
+        _storage.write('auth_token', token);
+        _storage.write('access_token', token); // Add this
+        _storage.write('token', token); // Add this
+
+        // Also update user_data if it exists
+        final userData = _storage.read('user_data') ?? {};
+        userData['token'] = token;
+        userData['access_token'] = token;
+        _storage.write('user_data', userData);
+
         _storage.write('user_email', email);
 
         // Clear pending verification
         _storage.remove('pending_verification_email');
 
         print('✅ EMAIL VERIFICATION SUCCESSFUL');
-        print('🔐 Token stored: ${response.data!.token.substring(0, 20)}...');
+        print('🔐 Token stored in multiple locations');
+        print('   auth_token: ${token.substring(0, 20)}...');
+        print('   access_token: ${token.substring(0, 20)}...');
+        print('   token: ${token.substring(0, 20)}...');
+        print('   user_data[token]: ${token.substring(0, 20)}...');
 
         Get.offAllNamed('/main');
       } else {
@@ -328,14 +355,25 @@ class AuthController extends GetxController {
       _printDebugInfo('GET_USER_PROFILE', null, response);
 
       if (response.success) {
-        if (response.data != null) {
-          // Update the reactive current user profile
-          currentUserProfile.value = response.data!;
+  if (response.data != null) {
+    // Update the reactive current user profile
+    currentUserProfile.value = response.data!;
 
-          // Also update stored user data for backward compatibility
-          _storage.write('user_data', response.data!.toJson());
-
-          print('✅ USER PROFILE FETCHED SUCCESSFULLY');
+    // Also update stored user data for backward compatibility
+    final userJson = response.data!.toJson();
+    
+    // Ensure token is preserved in user_data
+    final existingToken = _storage.read('auth_token') ?? 
+                         _storage.read('access_token') ?? 
+                         _storage.read('token');
+    if (existingToken != null) {
+      userJson['token'] = existingToken;
+      userJson['access_token'] = existingToken;
+    }
+    
+    _storage.write('user_data', userJson);
+    
+    print('✅ USER PROFILE FETCHED SUCCESSFULLY');
           print('👤 Name: ${response.data!.fullName}');
           print('📧 Email: ${response.data!.email}');
           print('📞 Phone: ${response.data!.phone}');
@@ -426,140 +464,138 @@ class AuthController extends GetxController {
     }
   }
 
-
- 
 // In your AuthController's updateProfile method, add debug prints:
-Future<api_models.ApiResponse<UserProfileResponse>> updateProfile({
-  String? fullName,
-  String? phone,
-}) async {
-  print('🎯 STARTING PROFILE UPDATE IN CONTROLLER');
-  print('👤 Full Name to update: $fullName');
-  print('📱 Phone to update: $phone');
-  
-  isUpdatingProfile.value = true;
-  errorMessage.value = '';
+  Future<api_models.ApiResponse<UserProfileResponse>> updateProfile({
+    String? fullName,
+    String? phone,
+  }) async {
+    print('🎯 STARTING PROFILE UPDATE IN CONTROLLER');
+    print('👤 Full Name to update: $fullName');
+    print('📱 Phone to update: $phone');
 
-  try {
-    final request = UpdateProfileRequest(
-      fullName: fullName,
-      phone: phone,
-    );
+    isUpdatingProfile.value = true;
+    errorMessage.value = '';
 
-    print('📦 UPDATE REQUEST: ${request.toJson()}');
-    
-    // Validate request
-    if (request.isEmpty) {
-      print('❌ EMPTY REQUEST - No changes provided');
-      errorMessage.value = 'No changes provided';
-      Get.snackbar(
-        'Update Failed',
-        'Please provide at least one field to update',
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-        duration: Duration(seconds: 3),
+    try {
+      final request = UpdateProfileRequest(
+        fullName: fullName,
+        phone: phone,
       );
-      
+
+      print('📦 UPDATE REQUEST: ${request.toJson()}');
+
+      // Validate request
+      if (request.isEmpty) {
+        print('❌ EMPTY REQUEST - No changes provided');
+        errorMessage.value = 'No changes provided';
+        Get.snackbar(
+          'Update Failed',
+          'Please provide at least one field to update',
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          duration: Duration(seconds: 3),
+        );
+
+        return api_models.ApiResponse(
+          success: false,
+          message: 'No changes provided',
+        );
+      }
+
+      final response = await _authRepository.updateProfile(request);
+
+      // Print debug info
+      _printDebugInfo('UPDATE_PROFILE', request.toJson(), response);
+
+      if (response.success && response.data != null) {
+        print('✅ CONTROLLER: PROFILE UPDATE SUCCESSFUL');
+        // Update the reactive current user profile
+        currentUserProfile.value = response.data!;
+
+        // Also update stored user data
+        _storage.write('user_data', response.data!.toJson());
+
+        print('👤 New Name: ${response.data!.fullName}');
+        print('📞 New Phone: ${response.data!.phone}');
+        print('📅 Updated At: ${response.data!.updatedAt}');
+
+        // Show success message
+        Get.snackbar(
+          'Profile Updated',
+          'Your profile has been updated successfully',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          duration: Duration(seconds: 3),
+        );
+
+        // Refresh the profile to get latest data
+        await getUserProfile();
+      } else {
+        print('❌ CONTROLLER: PROFILE UPDATE FAILED');
+        errorMessage.value = response.message;
+        print('❌ Error Message: ${response.message}');
+
+        Get.snackbar(
+          'Update Failed',
+          response.message,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          duration: Duration(seconds: 5),
+        );
+      }
+
+      return response;
+    } catch (e) {
+      print('🔥 CONTROLLER: PROFILE UPDATE EXCEPTION');
+      print('🔥 Error: $e');
+      print('🔥 Stack trace: ${e.toString()}');
+
+      errorMessage.value = e.toString();
+
+      if (e.toString().contains('Timeout') ||
+          e.toString().contains('timeout')) {
+        Get.snackbar(
+          'Network Timeout',
+          'Connection timeout. Please check your internet and try again.',
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          duration: Duration(seconds: 5),
+        );
+      } else {
+        Get.snackbar(
+          'Update Error',
+          e.toString(),
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          duration: Duration(seconds: 5),
+        );
+      }
+
       return api_models.ApiResponse(
         success: false,
-        message: 'No changes provided',
+        message: e.toString(),
       );
+    } finally {
+      isUpdatingProfile.value = false;
+      print('🏁 PROFILE UPDATE PROCESS COMPLETED');
     }
-
-    final response = await _authRepository.updateProfile(request);
-    
-    // Print debug info
-    _printDebugInfo('UPDATE_PROFILE', request.toJson(), response);
-    
-    if (response.success && response.data != null) {
-      print('✅ CONTROLLER: PROFILE UPDATE SUCCESSFUL');
-      // Update the reactive current user profile
-      currentUserProfile.value = response.data!;
-      
-      // Also update stored user data
-      _storage.write('user_data', response.data!.toJson());
-      
-      print('👤 New Name: ${response.data!.fullName}');
-      print('📞 New Phone: ${response.data!.phone}');
-      print('📅 Updated At: ${response.data!.updatedAt}');
-      
-      // Show success message
-      Get.snackbar(
-        'Profile Updated',
-        'Your profile has been updated successfully',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        duration: Duration(seconds: 3),
-      );
-      
-      // Refresh the profile to get latest data
-      await getUserProfile();
-    } else {
-      print('❌ CONTROLLER: PROFILE UPDATE FAILED');
-      errorMessage.value = response.message;
-      print('❌ Error Message: ${response.message}');
-      
-      Get.snackbar(
-        'Update Failed',
-        response.message,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: Duration(seconds: 5),
-      );
-    }
-    
-    return response;
-  } catch (e) {
-    print('🔥 CONTROLLER: PROFILE UPDATE EXCEPTION');
-    print('🔥 Error: $e');
-    print('🔥 Stack trace: ${e.toString()}');
-    
-    errorMessage.value = e.toString();
-    
-    if (e.toString().contains('Timeout') || e.toString().contains('timeout')) {
-      Get.snackbar(
-        'Network Timeout',
-        'Connection timeout. Please check your internet and try again.',
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-        duration: Duration(seconds: 5),
-      );
-    } else {
-      Get.snackbar(
-        'Update Error',
-        e.toString(),
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: Duration(seconds: 5),
-      );
-    }
-    
-    return api_models.ApiResponse(
-      success: false,
-      message: e.toString(),
-    );
-  } finally {
-    isUpdatingProfile.value = false;
-    print('🏁 PROFILE UPDATE PROCESS COMPLETED');
   }
-}
 
 // Also add these validation methods if they don't exist:
-bool isValidPhone(String phone) {
-  // Basic phone validation - adjust as needed
-  final phoneRegex = RegExp(r'^\+?[1-9]\d{1,14}$');
-  final isValid = phoneRegex.hasMatch(phone);
-  print('📱 Phone validation: "$phone" is ${isValid ? "valid" : "invalid"}');
-  return isValid;
-}
+  bool isValidPhone(String phone) {
+    // Basic phone validation - adjust as needed
+    final phoneRegex = RegExp(r'^\+?[1-9]\d{1,14}$');
+    final isValid = phoneRegex.hasMatch(phone);
+    print('📱 Phone validation: "$phone" is ${isValid ? "valid" : "invalid"}');
+    return isValid;
+  }
 
-bool isValidName(String name) {
-  final isValid = name.length >= 2 && name.length <= 50;
-  print('👤 Name validation: "$name" (${name.length} chars) is ${isValid ? "valid" : "invalid"}');
-  return isValid;
-}
-
-
+  bool isValidName(String name) {
+    final isValid = name.length >= 2 && name.length <= 50;
+    print(
+        '👤 Name validation: "$name" (${name.length} chars) is ${isValid ? "valid" : "invalid"}');
+    return isValid;
+  }
 
   // Check if user has pending verification
   String? get pendingVerificationEmail =>
@@ -661,8 +697,9 @@ bool isValidName(String name) {
     }
   }
 
-   // NEW: Request account deletion OTP
-  Future<api_models.ApiResponse<DeleteAccountResponse>> requestAccountDeletion() async {
+  // NEW: Request account deletion OTP
+  Future<api_models.ApiResponse<DeleteAccountResponse>>
+      requestAccountDeletion() async {
     isLoading.value = true;
     errorMessage.value = '';
 
@@ -670,13 +707,13 @@ bool isValidName(String name) {
       print('🚀 REQUESTING ACCOUNT DELETION OTP');
 
       final response = await _authRepository.requestAccountDeletion();
-      
+
       _printDebugInfo('REQUEST_ACCOUNT_DELETION', null, response);
-      
+
       if (response.success) {
         print('✅ DELETE OTP REQUEST SUCCESSFUL');
         print('📧 OTP sent to email for account deletion');
-        
+
         Get.snackbar(
           'OTP Sent',
           'An OTP has been sent to your email to confirm account deletion',
@@ -687,7 +724,7 @@ bool isValidName(String name) {
       } else {
         errorMessage.value = response.message;
         print('� DELETE OTP REQUEST FAILED: ${response.message}');
-        
+
         Get.snackbar(
           'Request Failed',
           response.message,
@@ -696,12 +733,12 @@ bool isValidName(String name) {
           duration: Duration(seconds: 5),
         );
       }
-      
+
       return response;
     } catch (e) {
       print('🔥 DELETE OTP REQUEST EXCEPTION: $e');
       errorMessage.value = e.toString();
-      
+
       Get.snackbar(
         'Error',
         'Failed to request account deletion: $e',
@@ -709,7 +746,7 @@ bool isValidName(String name) {
         colorText: Colors.white,
         duration: Duration(seconds: 5),
       );
-      
+
       return api_models.ApiResponse(
         success: false,
         message: e.toString(),
@@ -720,7 +757,8 @@ bool isValidName(String name) {
   }
 
   // NEW: Confirm account deletion with OTP
-  Future<api_models.ApiResponse<DeleteAccountResponse>> confirmAccountDeletion(String otp) async {
+  Future<api_models.ApiResponse<DeleteAccountResponse>> confirmAccountDeletion(
+      String otp) async {
     isDeletingAccount.value = true;
     errorMessage.value = '';
 
@@ -729,15 +767,15 @@ bool isValidName(String name) {
       print('🔢 OTP: $otp');
 
       final response = await _authRepository.confirmAccountDeletion(otp);
-      
+
       _printDebugInfo('CONFIRM_ACCOUNT_DELETION', {'otp': otp}, response);
-      
+
       if (response.success) {
         print('✅ ACCOUNT DELETION SUCCESSFUL');
-        
+
         // Clear all user data
         logout();
-        
+
         Get.snackbar(
           'Account Deleted',
           'Your account has been successfully deleted',
@@ -745,14 +783,14 @@ bool isValidName(String name) {
           colorText: Colors.white,
           duration: Duration(seconds: 5),
         );
-        
+
         // Navigate to login screen
         Get.offAllNamed('/login');
       } else {
         errorMessage.value = response.message;
         print('❌ ACCOUNT DELETION FAILED: ${response.message}');
-        
-        if (response.message.toLowerCase().contains('invalid') || 
+
+        if (response.message.toLowerCase().contains('invalid') ||
             response.message.toLowerCase().contains('expired')) {
           Get.snackbar(
             'Invalid OTP',
@@ -771,12 +809,12 @@ bool isValidName(String name) {
           );
         }
       }
-      
+
       return response;
     } catch (e) {
       print('🔥 ACCOUNT DELETION EXCEPTION: $e');
       errorMessage.value = e.toString();
-      
+
       Get.snackbar(
         'Error',
         'Failed to delete account: $e',
@@ -784,7 +822,7 @@ bool isValidName(String name) {
         colorText: Colors.white,
         duration: Duration(seconds: 5),
       );
-      
+
       return api_models.ApiResponse(
         success: false,
         message: e.toString(),
@@ -794,8 +832,9 @@ bool isValidName(String name) {
     }
   }
 
-   // NEW: Request password reset OTP
-  Future<api_models.ApiResponse<PasswordResetResponse>> requestPasswordReset(String email) async {
+  // NEW: Request password reset OTP
+  Future<api_models.ApiResponse<PasswordResetResponse>> requestPasswordReset(
+      String email) async {
     isLoading.value = true;
     errorMessage.value = '';
 
@@ -804,13 +843,13 @@ bool isValidName(String name) {
       print('📧 Email: $email');
 
       final response = await _authRepository.requestPasswordReset(email);
-      
+
       _printDebugInfo('REQUEST_PASSWORD_RESET', {'email': email}, response);
-      
+
       if (response.success) {
         print('✅ PASSWORD RESET OTP REQUEST SUCCESSFUL');
         print('📧 OTP sent to email for password reset');
-        
+
         Get.snackbar(
           'OTP Sent',
           'An OTP has been sent to your email to reset your password',
@@ -821,7 +860,7 @@ bool isValidName(String name) {
       } else {
         errorMessage.value = response.message;
         print('❌ PASSWORD RESET OTP REQUEST FAILED: ${response.message}');
-        
+
         if (response.message.toLowerCase().contains('not found')) {
           Get.snackbar(
             'Email Not Found',
@@ -840,12 +879,12 @@ bool isValidName(String name) {
           );
         }
       }
-      
+
       return response;
     } catch (e) {
       print('🔥 PASSWORD RESET REQUEST EXCEPTION: $e');
       errorMessage.value = e.toString();
-      
+
       Get.snackbar(
         'Error',
         'Failed to request password reset: $e',
@@ -853,7 +892,7 @@ bool isValidName(String name) {
         colorText: Colors.white,
         duration: Duration(seconds: 5),
       );
-      
+
       return api_models.ApiResponse(
         success: false,
         message: e.toString(),
@@ -882,12 +921,12 @@ bool isValidName(String name) {
         otp: otp,
         newPassword: newPassword,
       );
-      
+
       _printDebugInfo('RESET_PASSWORD', {'email': email, 'otp': otp}, response);
-      
+
       if (response.success) {
         print('✅ PASSWORD RESET SUCCESSFUL');
-        
+
         Get.snackbar(
           'Password Reset',
           'Your password has been reset successfully',
@@ -895,14 +934,14 @@ bool isValidName(String name) {
           colorText: Colors.white,
           duration: Duration(seconds: 5),
         );
-        
+
         // Navigate back to login screen
         Get.offAllNamed('/login');
       } else {
         errorMessage.value = response.message;
         print('❌ PASSWORD RESET FAILED: ${response.message}');
-        
-        if (response.message.toLowerCase().contains('invalid') || 
+
+        if (response.message.toLowerCase().contains('invalid') ||
             response.message.toLowerCase().contains('expired')) {
           Get.snackbar(
             'Invalid OTP',
@@ -929,12 +968,12 @@ bool isValidName(String name) {
           );
         }
       }
-      
+
       return response;
     } catch (e) {
       print('🔥 PASSWORD RESET EXCEPTION: $e');
       errorMessage.value = e.toString();
-      
+
       Get.snackbar(
         'Error',
         'Failed to reset password: $e',
@@ -942,7 +981,7 @@ bool isValidName(String name) {
         colorText: Colors.white,
         duration: Duration(seconds: 5),
       );
-      
+
       return api_models.ApiResponse(
         success: false,
         message: e.toString(),
@@ -955,7 +994,7 @@ bool isValidName(String name) {
   // NEW: Show forgot password dialog
   void showForgotPasswordDialog() {
     final emailController = TextEditingController();
-    
+
     Get.defaultDialog(
       title: 'Forgot Password',
       titlePadding: const EdgeInsets.only(top: 20, bottom: 10),
@@ -1010,7 +1049,8 @@ bool isValidName(String name) {
               if (value == null || value.isEmpty) {
                 return 'Please enter your email';
               }
-              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                  .hasMatch(value)) {
                 return 'Please enter a valid email';
               }
               return null;
@@ -1038,8 +1078,9 @@ bool isValidName(String name) {
                         );
                         return;
                       }
-                      
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                          .hasMatch(email)) {
                         Get.snackbar(
                           'Invalid Email',
                           'Please enter a valid email address',
@@ -1048,7 +1089,7 @@ bool isValidName(String name) {
                         );
                         return;
                       }
-                      
+
                       final result = await requestPasswordReset(email);
                       if (result.success) {
                         Get.back(); // Close email dialog
@@ -1102,259 +1143,263 @@ bool isValidName(String name) {
     );
   }
 
- // Show reset password dialog - UPDATED VERSION
-void _showResetPasswordDialog(String email) {
-  final otpController = TextEditingController();
-  final newPasswordController = TextEditingController();
-  final confirmPasswordController = TextEditingController();
-  final formKey = GlobalKey<FormState>();
-  final showPassword = false.obs;
-  
-  Get.defaultDialog(
-    title: 'Reset Password',
-    titlePadding: const EdgeInsets.only(top: 20, bottom: 10),
-    titleStyle: const TextStyle(
-      fontSize: 18,
-      fontWeight: FontWeight.bold,
-      color: AppPalette.primaryBlue,
-    ),
-    contentPadding: const EdgeInsets.all(20),
-    barrierDismissible: false, // Prevent closing by tapping outside
-    content: SizedBox(
-      width: Get.width * 0.9, // Set max width
-      child: SingleChildScrollView( // ADD THIS - makes content scrollable
-        child: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min, // ADD THIS - prevents overflow
-            children: [
-              const Icon(
-                Icons.email,
-                size: 50,
-                color: AppPalette.primaryBlue,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'OTP sent to $email',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.black87,
+  // Show reset password dialog - UPDATED VERSION
+  void _showResetPasswordDialog(String email) {
+    final otpController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final showPassword = false.obs;
+
+    Get.defaultDialog(
+      title: 'Reset Password',
+      titlePadding: const EdgeInsets.only(top: 20, bottom: 10),
+      titleStyle: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: AppPalette.primaryBlue,
+      ),
+      contentPadding: const EdgeInsets.all(20),
+      barrierDismissible: false, // Prevent closing by tapping outside
+      content: SizedBox(
+        width: Get.width * 0.9, // Set max width
+        child: SingleChildScrollView(
+          // ADD THIS - makes content scrollable
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // ADD THIS - prevents overflow
+              children: [
+                const Icon(
+                  Icons.email,
+                  size: 50,
+                  color: AppPalette.primaryBlue,
                 ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Enter the OTP and your new password',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 20),
-              
-              // OTP Field
-              TextFormField(
-                controller: otpController,
-                decoration: InputDecoration(
-                  labelText: 'OTP',
-                  hintText: 'Enter 6-digit OTP',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                const SizedBox(height: 16),
+                Text(
+                  'OTP sent to $email',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
                   ),
                 ),
-                keyboardType: TextInputType.number,
-                maxLength: 6,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter OTP';
-                  }
-                  if (value.length != 6) {
-                    return 'OTP must be 6 digits';
-                  }
-                  return null;
-                },
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // New Password Field
-              Obx(() => TextFormField(
-                controller: newPasswordController,
-                decoration: InputDecoration(
-                  labelText: 'New Password',
-                  hintText: 'Enter new password',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      showPassword.value ? Icons.visibility_off : Icons.visibility,
-                      size: 20,
+                const SizedBox(height: 8),
+                const Text(
+                  'Enter the OTP and your new password',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // OTP Field
+                TextFormField(
+                  controller: otpController,
+                  decoration: InputDecoration(
+                    labelText: 'OTP',
+                    hintText: 'Enter 6-digit OTP',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    onPressed: () => showPassword.value = !showPassword.value,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                ),
-                obscureText: !showPassword.value,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter new password';
-                  }
-                  if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
-              )),
-              
-              const SizedBox(height: 16),
-              
-              // Confirm Password Field
-              Obx(() => TextFormField(
-                controller: confirmPasswordController,
-                decoration: InputDecoration(
-                  labelText: 'Confirm Password',
-                  hintText: 'Confirm new password',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      showPassword.value ? Icons.visibility_off : Icons.visibility,
-                      size: 20,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
-                    onPressed: () => showPassword.value = !showPassword.value,
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter OTP';
+                    }
+                    if (value.length != 6) {
+                      return 'OTP must be 6 digits';
+                    }
+                    return null;
+                  },
                 ),
-                obscureText: !showPassword.value,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please confirm password';
-                  }
-                  if (value != newPasswordController.text) {
-                    return 'Passwords do not match';
-                  }
-                  return null;
-                },
-              )),
-              
-              const SizedBox(height: 20),
-              
-              // Action Buttons
-              Obx(() {
-                if (isResettingPassword.value) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20),
-                    child: CircularProgressIndicator(),
-                  );
-                }
-                
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: double.infinity,
-                      height: 45,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          if (formKey.currentState!.validate()) {
-                            final otp = otpController.text.trim();
-                            final newPassword = newPasswordController.text;
-                            
-                            await resetPassword(
-                              email: email,
-                              otp: otp,
-                              newPassword: newPassword,
-                            );
-                            
-                            if (!isResettingPassword.value) {
-                              Get.back(); // Close dialog after completion
-                            }
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppPalette.primaryBlue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+
+                const SizedBox(height: 16),
+
+                // New Password Field
+                Obx(() => TextFormField(
+                      controller: newPasswordController,
+                      decoration: InputDecoration(
+                        labelText: 'New Password',
+                        hintText: 'Enter new password',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            showPassword.value
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            size: 20,
                           ),
+                          onPressed: () =>
+                              showPassword.value = !showPassword.value,
                         ),
-                        child: const Text(
-                          'Reset Password',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
                         ),
                       ),
-                    ),
-                    
-                    const SizedBox(height: 10),
-                    
-                    SizedBox(
-                      width: double.infinity,
-                      height: 45,
-                      child: OutlinedButton(
-                        onPressed: () => Get.back(),
-                        style: OutlinedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          side: const BorderSide(color: Colors.grey),
-                        ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 10),
-                    
-                    TextButton(
-                      onPressed: () async {
-                        Get.back(); // Close current dialog
-                        await requestPasswordReset(email);
-                        await Future.delayed(const Duration(milliseconds: 500));
-                        _showResetPasswordDialog(email);
+                      obscureText: !showPassword.value,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter new password';
+                        }
+                        if (value.length < 6) {
+                          return 'Password must be at least 6 characters';
+                        }
+                        return null;
                       },
-                      child: const Text(
-                        'Resend OTP',
-                        style: TextStyle(
-                          color: AppPalette.primaryBlue,
-                          decoration: TextDecoration.underline,
+                    )),
+
+                const SizedBox(height: 16),
+
+                // Confirm Password Field
+                Obx(() => TextFormField(
+                      controller: confirmPasswordController,
+                      decoration: InputDecoration(
+                        labelText: 'Confirm Password',
+                        hintText: 'Confirm new password',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            showPassword.value
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            size: 20,
+                          ),
+                          onPressed: () =>
+                              showPassword.value = !showPassword.value,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
                         ),
                       ),
-                    ),
-                  ],
-                );
-              }),
-            ],
+                      obscureText: !showPassword.value,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm password';
+                        }
+                        if (value != newPasswordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
+                    )),
+
+                const SizedBox(height: 20),
+
+                // Action Buttons
+                Obx(() {
+                  if (isResettingPassword.value) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        height: 45,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            if (formKey.currentState!.validate()) {
+                              final otp = otpController.text.trim();
+                              final newPassword = newPasswordController.text;
+
+                              await resetPassword(
+                                email: email,
+                                otp: otp,
+                                newPassword: newPassword,
+                              );
+
+                              if (!isResettingPassword.value) {
+                                Get.back(); // Close dialog after completion
+                              }
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppPalette.primaryBlue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            'Reset Password',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 45,
+                        child: OutlinedButton(
+                          onPressed: () => Get.back(),
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            side: const BorderSide(color: Colors.grey),
+                          ),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextButton(
+                        onPressed: () async {
+                          Get.back(); // Close current dialog
+                          await requestPasswordReset(email);
+                          await Future.delayed(
+                              const Duration(milliseconds: 500));
+                          _showResetPasswordDialog(email);
+                        },
+                        child: const Text(
+                          'Resend OTP',
+                          style: TextStyle(
+                            color: AppPalette.primaryBlue,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-    radius: 12,
-  );
-}
+      radius: 12,
+    );
+  }
 
   // Helper method to show delete confirmation dialog
   void showDeleteAccountDialog() {
@@ -1456,7 +1501,7 @@ void _showResetPasswordDialog(String email) {
   // Helper method to initiate account deletion process
   Future<void> _initiateAccountDeletion() async {
     final result = await requestAccountDeletion();
-    
+
     if (result.success) {
       // Show OTP input dialog after OTP is sent
       await Future.delayed(const Duration(milliseconds: 500));
@@ -1467,7 +1512,7 @@ void _showResetPasswordDialog(String email) {
   // Show OTP verification dialog
   void _showOtpVerificationDialog() {
     final otpController = TextEditingController();
-    
+
     Get.defaultDialog(
       title: 'Confirm Account Deletion',
       titlePadding: const EdgeInsets.only(top: 20, bottom: 10),
@@ -1547,7 +1592,7 @@ void _showResetPasswordDialog(String email) {
                         );
                         return;
                       }
-                      
+
                       await confirmAccountDeletion(otp);
                       if (isDeletingAccount.value == false) {
                         Get.back(); // Close dialog after completion
@@ -1615,4 +1660,3 @@ void _showResetPasswordDialog(String email) {
     );
   }
 }
-

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../../../routes/app_routes.dart';
+import '../../../data/models/reservation_models/reservation_models.dart';
+import '../../payments/controllers/payment_controller.dart';
 import '../controllers/reservation_controller.dart';
 
 class CreateReservationScreen extends StatefulWidget {
@@ -20,6 +22,7 @@ class CreateReservationScreen extends StatefulWidget {
 class _CreateReservationScreenState extends State<CreateReservationScreen>
     with SingleTickerProviderStateMixin {
   final ReservationController controller = Get.find<ReservationController>();
+  final PaymentController paymentController = Get.find<PaymentController>();
   final GetStorage storage = GetStorage();
 
   // Form state
@@ -31,7 +34,9 @@ class _CreateReservationScreenState extends State<CreateReservationScreen>
   String? _selectedVehicleModelId;
   final String _selectedBranchId = '6750f1e0c1a2b34de0abcd01';
 
-  // Form controllers
+  // Payment state
+  String? _selectedPaymentMethod; // 'card', 'ecocash', 'cash'
+  final TextEditingController _mobileNumberController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _promoCodeController = TextEditingController();
 
@@ -63,11 +68,11 @@ class _CreateReservationScreenState extends State<CreateReservationScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
     );
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fadeController.forward();
     });
@@ -195,7 +200,7 @@ class _CreateReservationScreenState extends State<CreateReservationScreen>
       // Call controller to create reservation
       final response = await controller.createReservation(
         vehicleId: _selectedVehicleId!,
-        vehicleModelId: _selectedVehicleModelId!, // Add this
+        vehicleModelId: _selectedVehicleModelId!,
         pickupDate: _selectedStartDate!,
         dropoffDate: _selectedEndDate!,
         branchId: _selectedBranchId,
@@ -207,65 +212,9 @@ class _CreateReservationScreenState extends State<CreateReservationScreen>
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
       );
 
-      if (response != null && response.success) {
-        // Success - show confirmation and navigate
-        Get.dialog(
-          AlertDialog(
-            title: Text('Reservation Created!'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.check_circle, color: Colors.green, size: 64),
-                SizedBox(height: 16),
-                Text(
-                  'Your reservation has been successfully created.',
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 8),
-                if (response.data?.id != null) ...[
-                  Text(
-                    'Reservation ID: ${response.data!.id.substring(0, 8)}...',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-                SizedBox(height: 8),
-                Text(
-                  'Total Amount: \$${(response.data?.totalAmount ?? _grandTotal).toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
-                ),
-              ],
-            ),
-         actions: [
-  TextButton(
-    onPressed: () {
-      Get.back(); // Close dialog
-      Get.until((route) => route.isFirst); // Go to home
-    },
-    child: Text('Go to Home'),
-  ),
-  ElevatedButton(
-    onPressed: () {
-      Get.back(); // Close dialog
-      // Navigate to the newly created reservation detail
-      if (response.data?.id != null) {
-        Get.offAllNamed(
-          AppRoutes.reservationDetail,
-          arguments: {'reservationId': response.data!.id},
-        );
-      } else {
-        // Fallback to list if we don't have the ID
-        Get.offAllNamed(AppRoutes.reservationList);
-      }
-    },
-    child: Text('View Reservation'),
-  ),
-],
-          ),
-        );
+      if (response != null && response.success && response.data != null) {
+        // Show payment options dialog instead of directly navigating
+        await _showPaymentOptions(response.data!);
       } else {
         throw Exception('Failed to create reservation');
       }
@@ -275,13 +224,517 @@ class _CreateReservationScreenState extends State<CreateReservationScreen>
         e.toString(),
         backgroundColor: Colors.red,
         colorText: Colors.white,
-        duration: Duration(seconds: 5),
+        duration: const Duration(seconds: 5),
       );
+      print('❌ ERROR in _submitReservation: $e'); // Terminal error
     } finally {
       setState(() {
         _isSubmitting = false;
       });
     }
+  }
+
+  Future<void> _showPaymentOptions(Reservation reservation) async {
+    print('💰 Opening payment options dialog'); // Terminal log
+
+    // Reset payment method and mobile number when dialog opens
+    _selectedPaymentMethod = null;
+    _mobileNumberController.clear();
+
+    await Get.dialog(
+      AlertDialog(
+        title: const Text('Payment Required'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Reservation created successfully!',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.green,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Reservation ID: ${reservation.id.substring(0, 8)}...',
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Total Amount: \$${reservation.totalAmount.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 16),
+              const Text(
+                'Select Payment Method',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Payment Method Options
+              _buildPaymentOption(
+                title: 'Credit/Debit Card',
+                subtitle: 'Pay via Visa/Mastercard',
+                icon: Icons.credit_card,
+                value: 'card',
+              ),
+              const SizedBox(height: 8),
+
+              _buildPaymentOption(
+                title: 'Ecocash',
+                subtitle: 'Mobile money payment',
+                icon: Icons.phone_android,
+                value: 'ecocash',
+              ),
+              const SizedBox(height: 8),
+
+              _buildPaymentOption(
+                title: 'Pay at Branch',
+                subtitle: 'Pay when you pickup the vehicle',
+                icon: Icons.store,
+                value: 'cash',
+              ),
+
+              // Show mobile number field only when Ecocash is selected
+              if (_selectedPaymentMethod == 'ecocash') ...[
+                const SizedBox(height: 16),
+                const Text(
+                  'Mobile Number (for Ecocash):',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _mobileNumberController,
+                  decoration: const InputDecoration(
+                    hintText: '077XXXXXXX',
+                    prefixText: '+263 ',
+                    border: OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                  keyboardType: TextInputType.phone,
+                  onChanged: (value) {
+                    print('📱 Mobile number entered: $value'); // Terminal log
+                  },
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Required for Ecocash payments only',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              print('⏭️ User selected Pay Later'); // Terminal log
+              Get.back();
+              // Navigate to reservation detail without payment
+              Get.offAllNamed(
+                AppRoutes.reservationDetail,
+                arguments: {'reservationId': reservation.id},
+              );
+            },
+            child: const Text('Pay Later'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              print('💳 User clicked Proceed to Payment'); // Terminal log
+
+              if (_selectedPaymentMethod == null) {
+                print('❌ ERROR: No payment method selected'); // Terminal error
+                Get.snackbar(
+                  'Payment Method Required',
+                  'Please select a payment method',
+                  backgroundColor: Colors.orange,
+                  duration: const Duration(seconds: 3),
+                );
+                return;
+              }
+
+              // Validate mobile number for Ecocash
+              if (_selectedPaymentMethod == 'ecocash') {
+                if (_mobileNumberController.text.isEmpty) {
+                  print(
+                      '❌ ERROR: Mobile number required for Ecocash'); // Terminal error
+                  Get.snackbar(
+                    'Mobile Number Required',
+                    'Please enter your mobile number for Ecocash',
+                    backgroundColor: Colors.orange,
+                    duration: const Duration(seconds: 3),
+                  );
+                  return;
+                }
+
+                // Validate Zimbabwean mobile number format
+                if (!_isValidZimbabweanMobile(_mobileNumberController.text)) {
+                  print(
+                      '❌ ERROR: Invalid mobile number format for Ecocash: ${_mobileNumberController.text}'); // Terminal error
+                  Get.snackbar(
+                    'Invalid Mobile Number',
+                    'Please enter a valid Zimbabwean mobile number (e.g., 0771234567)',
+                    backgroundColor: Colors.orange,
+                    duration: const Duration(seconds: 3),
+                  );
+                  return;
+                }
+              }
+
+              print(
+                  '✅ Proceeding with payment method: $_selectedPaymentMethod'); // Terminal log
+              await _processPayment(reservation);
+            },
+            child: const Text('Proceed to Payment'),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  Widget _buildPaymentOption({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required String value,
+  }) {
+    final isSelected = _selectedPaymentMethod == value;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isSelected
+            ? const Color(0xFF047BC1).withOpacity(0.1)
+            : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isSelected ? const Color(0xFF047BC1) : Colors.grey.shade300,
+          width: isSelected ? 2 : 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: () {
+            print('🎯 Selected payment method: $value');
+            setState(() {
+              _selectedPaymentMethod = value;
+            });
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? const Color(0xFF047BC1)
+                        : Colors.grey.shade200,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isSelected ? Colors.white : Colors.grey.shade700,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: isSelected
+                              ? const Color(0xFF047BC1)
+                              : Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isSelected)
+                  const Icon(
+                    Icons.check_circle,
+                    color: Color(0xFF047BC1),
+                  ),
+                // Remove the Radio widget since we're using the entire container as clickable
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _processPayment(Reservation reservation) async {
+    try {
+      print('🔄 Starting payment process...'); // Terminal log
+      Get.back(); // Close the dialog
+
+      // Show processing dialog
+      Get.dialog(
+        const AlertDialog(
+          title: Text('Processing Payment'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Please wait while we process your payment...'),
+            ],
+          ),
+        ),
+        barrierDismissible: false,
+      );
+
+      print('💰 Processing $_selectedPaymentMethod payment'); // Terminal log
+
+      switch (_selectedPaymentMethod) {
+        case 'card':
+          print('💳 Processing card payment'); // Terminal log
+          await _processCardPayment(reservation);
+          break;
+        case 'ecocash':
+          print('📱 Processing Ecocash payment'); // Terminal log
+          await _processEcocashPayment(reservation);
+          break;
+        case 'cash':
+          print('💵 Processing cash payment'); // Terminal log
+          await _handleCashPayment(reservation);
+          break;
+        default:
+          print(
+              '❌ ERROR: Unknown payment method: $_selectedPaymentMethod'); // Terminal error
+          throw Exception('Unknown payment method');
+      }
+    } catch (e) {
+      print('❌ ERROR in _processPayment: $e'); // Terminal error
+      Get.back(); // Close processing dialog
+      Get.snackbar(
+        'Payment Failed',
+        e.toString(),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 5),
+      );
+    }
+  }
+
+  Future<void> _processCardPayment(Reservation reservation) async {
+    try {
+      final userData = storage.read('user_data') ?? {};
+      final email = userData['email'] ?? '';
+
+      if (email.isEmpty) {
+        throw Exception('Email is required for card payment');
+      }
+
+      final paymentResponse = await paymentController.initiateCardPayment(
+        reservationId: reservation.id,
+        amount: reservation.totalAmount,
+        email: email,
+        promoCode: _promoCodeController.text.isNotEmpty
+            ? _promoCodeController.text
+            : null,
+      );
+
+      Get.back(); // Close processing dialog
+
+      if (paymentResponse != null && paymentResponse.redirectUrl != null) {
+        // Open the payment URL in webview or browser
+        Get.toNamed(
+          AppRoutes.paymentWebview,
+          arguments: {
+            'url': paymentResponse.redirectUrl!,
+            'reservationId': reservation.id,
+            'paymentId': paymentResponse.payment?.id,
+          },
+        );
+      } else {
+        Get.snackbar(
+          'Payment Failed',
+          'Could not initiate card payment',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> _processEcocashPayment(Reservation reservation) async {
+    try {
+      final paymentResponse = await paymentController.initiateMobilePayment(
+        reservationId: reservation.id,
+        amount: reservation.totalAmount,
+        phone: _mobileNumberController.text,
+        mobileMethod: 'ecocash',
+        promoCode: _promoCodeController.text.isNotEmpty
+            ? _promoCodeController.text
+            : null,
+      );
+
+      Get.back(); // Close processing dialog
+
+      if (paymentResponse != null) {
+        if (paymentResponse.payment?.pollUrl != null) {
+          // Show polling screen
+          Get.toNamed(
+            AppRoutes.paymentPolling,
+            arguments: {
+              'paymentId': paymentResponse.payment!.id,
+              'reservationId': reservation.id,
+            },
+          );
+        } else {
+          // Show instructions for mobile payment
+          _showMobilePaymentInstructions(reservation);
+        }
+      } else {
+        Get.snackbar(
+          'Payment Failed',
+          'Could not initiate mobile payment',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> _handleCashPayment(Reservation reservation) async {
+    Get.back(); // Close processing dialog
+
+    await Get.dialog(
+      AlertDialog(
+        title: const Text('Payment Instructions'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.store, size: 48, color: Colors.blue),
+            const SizedBox(height: 16),
+            const Text(
+              'Please bring the following amount to the branch when you pick up the vehicle:',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '\$${reservation.totalAmount.toStringAsFixed(2)}',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: Colors.green,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Reservation ID: ${reservation.id.substring(0, 8)}...',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+              Get.offAllNamed(
+                AppRoutes.reservationDetail,
+                arguments: {'reservationId': reservation.id},
+              );
+            },
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMobilePaymentInstructions(Reservation reservation) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Ecocash Payment Instructions'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.phone_android, size: 48, color: Colors.green),
+            const SizedBox(height: 16),
+            const Text(
+              'To complete your payment:',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '1. Dial *151*2# on your mobile\n'
+              '2. Select "Pay Bill"\n'
+              '3. Enter merchant code: CAR123\n'
+              '4. Enter amount: \$${reservation.totalAmount.toStringAsFixed(2)}\n'
+              '5. Enter reference: ${reservation.id.substring(0, 8)}',
+              style: const TextStyle(height: 1.5),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Your reservation will be confirmed once payment is received.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Close'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+              Get.offAllNamed(
+                AppRoutes.reservationDetail,
+                arguments: {'reservationId': reservation.id},
+              );
+            },
+            child: const Text('View Reservation'),
+          ),
+        ],
+      ),
+    );
   }
 
   // Helper methods
@@ -800,12 +1253,11 @@ class _CreateReservationScreenState extends State<CreateReservationScreen>
                   FutureBuilder<Map<String, dynamic>>(
                     future: _getUserInfo(),
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
                         return Center(
                           child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation(
-                              const Color(0xFF047BC1),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Color(0xFF047BC1),
                             ),
                           ),
                         );
@@ -829,11 +1281,14 @@ class _CreateReservationScreenState extends State<CreateReservationScreen>
                       final userData = snapshot.data!;
                       return Column(
                         children: [
-                          _buildInfoRow('Name', userData['full_name'] ?? 'Not provided'),
+                          _buildInfoRow(
+                              'Name', userData['full_name'] ?? 'Not provided'),
                           const Divider(height: 20),
-                          _buildInfoRow('Email', userData['email'] ?? 'Not provided'),
+                          _buildInfoRow(
+                              'Email', userData['email'] ?? 'Not provided'),
                           const Divider(height: 20),
-                          _buildInfoRow('Phone', userData['phone'] ?? 'Not provided'),
+                          _buildInfoRow(
+                              'Phone', userData['phone'] ?? 'Not provided'),
                           if (userData['driver_license'] != null) ...[
                             const Divider(height: 20),
                             Row(
@@ -1178,5 +1633,53 @@ class _CreateReservationScreenState extends State<CreateReservationScreen>
       'phone': userData['phone'],
       'driver_license': userData['driver_license'],
     };
+  }
+
+  bool _isValidZimbabweanMobile(String mobile) {
+    if (mobile.isEmpty) return false;
+
+    // Remove any non-digit characters and spaces
+    final cleanMobile = mobile.replaceAll(RegExp(r'[^\d]'), '').trim();
+
+    print('🔍 Validating mobile: "$mobile" -> cleaned: "$cleanMobile"');
+
+    // Check for common Zimbabwean mobile formats:
+
+    // 1. Starts with 0 and has 10 digits (e.g., 0771234567)
+    if (cleanMobile.startsWith('0') && cleanMobile.length == 10) {
+      final prefix = cleanMobile.substring(0, 3);
+      if (['077', '078', '071', '073'].contains(prefix)) {
+        print('✅ Valid format: Starts with 0, 10 digits, prefix: $prefix');
+        return true;
+      }
+    }
+
+    // 2. Already in international format without +263 (e.g., 771234567) - 9 digits
+    if (cleanMobile.length == 9 && RegExp(r'^7[1378]').hasMatch(cleanMobile)) {
+      print('✅ Valid format: 9 digits, starts with 7[1378]');
+      return true;
+    }
+
+    // 3. Full international format with 263 (e.g., 263771234567) - 12 digits
+    if (cleanMobile.length == 12 && cleanMobile.startsWith('263')) {
+      final prefix = cleanMobile.substring(3, 6); // Get the 3 digits after 263
+      if (['77', '78', '71', '73'].any((p) => prefix.startsWith(p))) {
+        print('✅ Valid format: 12 digits with 263 prefix');
+        return true;
+      }
+    }
+
+    // 4. Allow 10-digit numbers starting with 7 (already has +263 removed)
+    if (cleanMobile.length == 10 && cleanMobile.startsWith('7')) {
+      final prefix = cleanMobile.substring(0, 3);
+      if (['077', '078', '071', '073'].any((p) => prefix == p.substring(1))) {
+        print('✅ Valid format: 10 digits starting with 7');
+        return true;
+      }
+    }
+
+    print(
+        '❌ Invalid mobile format: $cleanMobile (length: ${cleanMobile.length})');
+    return false;
   }
 }

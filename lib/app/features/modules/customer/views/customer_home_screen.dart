@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:iconsax/iconsax.dart';
+import '../../../../routes/app_routes.dart';
 import '../../../data/services/rate_plan_service.dart';
 import '../../../widgets/sidebar_widget/customer_sidebar_widget.dart';
 import '../../car_details/views/car_detail_screen.dart';
-import '../../promo_code/views/promo_code_screen.dart';
-import '../../chat/views/conversations_list_screen.dart';
 import '../../rate_plans/controllers/rate_plan_controller.dart';
 
 class CustomerHomeScreen extends StatelessWidget {
@@ -35,6 +34,18 @@ class _HomeContent extends StatelessWidget {
 
   final GetStorage storage = GetStorage();
 
+  // Method to get notification route
+  String _getNotificationRoute() {
+    final userData = storage.read('user_data') ?? {};
+    final roles = userData['roles'] as List<dynamic>? ?? [];
+    final isAgent = roles.any((role) => role.toString().contains('agent'));
+    
+    return isAgent 
+        ? AppRoutes.agentNotifications 
+        : AppRoutes.customerNotifications;
+  }
+
+  // Update navItems to include Notification
   final List<HomeNavItem> _navItems = [
     HomeNavItem(
       icon: Iconsax.driving,
@@ -42,6 +53,14 @@ class _HomeContent extends StatelessWidget {
       route: '/drivers/public',
       color: Color(0xFF047BC1),
       gradient: [Color(0xFF047BC1), Color(0xFF0A9FE8)],
+    ),
+    // NOTIFICATION ITEM - UNCOMMENTED AND ADDED
+    HomeNavItem(
+      icon: Iconsax.notification,
+      title: 'Notifications',
+      route: AppRoutes.customerNotifications,
+      color: Color(0xFF4F46E5),
+      gradient: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
     ),
     HomeNavItem(
       icon: Iconsax.profile_2user,
@@ -126,7 +145,7 @@ class _HomeContent extends StatelessWidget {
                       painter: _CirclePatternPainter(),
                     ),
                   ),
-                  
+
                   Padding(
                     padding: EdgeInsets.only(
                       top: MediaQuery.of(context).padding.top + 20,
@@ -208,7 +227,7 @@ class _HomeContent extends StatelessWidget {
                                 ),
                               ),
                               SizedBox(width: 18),
-                              
+
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,18 +286,23 @@ class _HomeContent extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                              
-                              // Quick Actions
+
+                              // Quick Actions - UPDATED
                               Column(
                                 children: [
                                   _buildQuickActionButton(
                                     icon: Iconsax.message,
-                                    onTap: () => Get.to(() => ConversationsListScreen()),
+                                    onTap: () => Get.toNamed(AppRoutes.chatConversations),
+                                  ),
+                                  SizedBox(height: 14),
+                                  _buildQuickActionButton(
+                                    icon: Iconsax.notification,
+                                    onTap: () => Get.toNamed(_getNotificationRoute()),
                                   ),
                                   SizedBox(height: 14),
                                   _buildQuickActionButton(
                                     icon: Iconsax.ticket_discount,
-                                    onTap: () => Get.to(() => PromoCodeScreen()),
+                                    onTap: () => Get.toNamed(AppRoutes.promoCodes),
                                   ),
                                 ],
                               ),
@@ -623,7 +647,7 @@ class _HomeContent extends StatelessWidget {
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          onTap: () => Get.to(() => PromoCodeScreen()),
+                          onTap: () => Get.toNamed(AppRoutes.promoCodes),
                           borderRadius: BorderRadius.circular(100),
                           child: Padding(
                             padding: EdgeInsets.all(12),
@@ -982,10 +1006,12 @@ class _HomeContent extends StatelessWidget {
   Widget _buildNavCard(HomeNavItem item) {
     return GestureDetector(
       onTap: () {
-        if (item.route == '/chat/conversations') {
-          Get.to(() => ConversationsListScreen());
-        } else if (item.route == '/promo-codes') {
-          Get.to(() => PromoCodeScreen());
+        if (item.route == AppRoutes.chatConversations) {
+          Get.toNamed(AppRoutes.chatConversations);
+        } else if (item.route == AppRoutes.promoCodes) {
+          Get.toNamed(AppRoutes.promoCodes);
+        } else if (item.route == AppRoutes.customerNotifications) {
+          Get.toNamed(AppRoutes.customerNotifications);
         } else {
           try {
             Get.toNamed(item.route);

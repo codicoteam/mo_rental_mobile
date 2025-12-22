@@ -193,7 +193,7 @@ Future<List<Reservation>> getReservations({
         'accept': 'application/json',
         'Content-Type': 'application/json',
       },
-    ).timeout(const Duration(seconds: 15));
+    ).timeout(const Duration(seconds: 35));
 
     print('📊 HTTP Response Status: ${response.statusCode}');
     print('📄 HTTP Response Body: ${response.body}');

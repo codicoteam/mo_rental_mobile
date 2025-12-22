@@ -17,6 +17,8 @@ import '../features/modules/auth/views/verify_email_screen.dart';
 import '../features/modules/bindings/agent_reservation_binding.dart';
 import '../features/modules/bindings/branch_binding.dart';
 import '../features/modules/bindings/chat_binding.dart';
+import '../features/modules/bindings/notification_binding.dart';
+import '../features/modules/bindings/payment_binding.dart';
 import '../features/modules/bindings/rate_plan_binding.dart';
 import '../features/modules/bindings/reservation_binding.dart';
 import '../features/modules/branches/views/branch_detail_screen.dart';
@@ -29,6 +31,12 @@ import '../features/modules/drivers/controllers/driver_profile_controller.dart';
 import '../features/modules/drivers/views/driver_profile_form_screen.dart';
 import '../features/modules/drivers/views/my_driver_profile_screen.dart';
 import '../features/modules/drivers/views/public_drivers_screen.dart';
+import '../features/modules/notifications/views/agent_notifications_screen.dart';
+import '../features/modules/notifications/views/create_notification_screen.dart';
+import '../features/modules/notifications/views/customer_notifications_screen.dart';
+import '../features/modules/payments/vews/payment_polling_screen.dart';
+import '../features/modules/payments/vews/payment_success_screen.dart';
+import '../features/modules/payments/vews/payment_webview_screen.dart';
 import '../features/modules/profile/views/delete_account_screen.dart';
 import '../features/modules/profile/views/edit_profile_screen.dart'; // ADD THIS IMPORT
 import '../features/modules/profile/views/profile_screen.dart'; // ADD THIS IMPORT
@@ -44,7 +52,8 @@ import '../features/modules/vehicles/views/vehicle_selection_screen.dart';
 import '../features/modules/vehicles/views/vehicles_screen.dart';
 import '../features/modules/welcome_screens/onboarding_screens/views/onboarding_screen.dart';
 import '../features/modules/welcome_screens/splash_screen/views/splash_screen.dart';
-import '../features/widgets/agent_botton_nav/agent_botton_nav_tabs.dart';
+import '../features/widgets/agent_navigation/agent_navigation.dart';
+import '../features/widgets/main_botton_nav/main_botton_nav_tabs.dart';
 import 'app_routes.dart';
 import '../features/modules/promo_code/views/promo_code_screen.dart';
 
@@ -208,6 +217,7 @@ class AppPages {
         );
       }),
     ),
+
     // ADD THESE PROFILE ROUTES
     GetPage(
       name: AppRoutes.profile,
@@ -233,6 +243,7 @@ class AppPages {
       name: '/agent/home',
       page: () => AgentHomeScreen(),
     ),
+
     // Agent routes
     GetPage(
       name: '/agent/reservations/create',
@@ -253,6 +264,49 @@ class AppPages {
       name: '/agent/customers/select',
       page: () => const AgentCustomerSelectionScreen(),
       binding: AgentReservationBinding(),
+    ),
+
+
+    // Add this route
+    GetPage(
+      name: '/agent/navigation',
+      page: () => const AgentNavigation(),
+      binding: AuthBinding(), // Or create AgentBinding if needed
+    ),
+
+    
+    // In your app_pages.dart, add PaymentBinding to payment routes
+    GetPage(
+      name: AppRoutes.paymentWebview,
+      page: () => PaymentWebviewScreen(),
+      binding: PaymentBinding(), // Add this
+    ),
+    GetPage(
+      name: AppRoutes.paymentPolling,
+      page: () => PaymentPollingScreen(),
+      binding: PaymentBinding(), // Add this
+    ),
+    GetPage(
+      name: AppRoutes.paymentSuccess,
+      page: () => PaymentSuccessScreen(),
+      binding: PaymentBinding(), // Add this
+    ),
+
+      // Add notification pages
+    GetPage(
+      name: AppRoutes.agentNotifications,
+      page: () => const AgentNotificationsScreen(),
+      binding: NotificationBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.customerNotifications,
+      page: () => const CustomerNotificationsScreen(),
+      binding: NotificationBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.createNotification,
+      page: () => CreateNotificationScreen(),
+      binding: NotificationBinding(),
     ),
   ];
 }

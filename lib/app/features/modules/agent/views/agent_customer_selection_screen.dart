@@ -7,12 +7,14 @@ class AgentCustomerSelectionScreen extends StatefulWidget {
   const AgentCustomerSelectionScreen({super.key});
 
   @override
-  State<AgentCustomerSelectionScreen> createState() => _AgentCustomerSelectionScreenState();
+  State<AgentCustomerSelectionScreen> createState() =>
+      _AgentCustomerSelectionScreenState();
 }
 
-class _AgentCustomerSelectionScreenState extends State<AgentCustomerSelectionScreen> 
-    with TickerProviderStateMixin {
-  final AgentCustomerController controller = Get.find<AgentCustomerController>();
+class _AgentCustomerSelectionScreenState
+    extends State<AgentCustomerSelectionScreen> with TickerProviderStateMixin {
+  final AgentCustomerController controller =
+      Get.find<AgentCustomerController>();
   final GetStorage storage = GetStorage();
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
@@ -22,25 +24,25 @@ class _AgentCustomerSelectionScreenState extends State<AgentCustomerSelectionScr
   @override
   void initState() {
     super.initState();
-    
+
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    
+
     _slideController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
     );
-    
+
     _slideAnimation = Tween<double>(begin: -50.0, end: 0.0).animate(
       CurvedAnimation(parent: _slideController, curve: Curves.easeOut),
     );
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fadeController.forward();
       _slideController.forward();
@@ -60,12 +62,13 @@ class _AgentCustomerSelectionScreenState extends State<AgentCustomerSelectionScr
     final phone = customer['phone'] ?? 'No phone';
     // ignore: unused_local_variable
     final id = customer['id'] ?? customer['_id'] ?? 'unknown';
-    
+
     return AnimatedBuilder(
       animation: _fadeController,
       builder: (context, child) {
         return Transform.translate(
-          offset: Offset(0, _slideAnimation.value * (1 - (index * 0.1).clamp(0.0, 1.0))),
+          offset: Offset(
+              0, _slideAnimation.value * (1 - (index * 0.1).clamp(0.0, 1.0))),
           child: Opacity(
             opacity: _fadeAnimation.value,
             child: child,
@@ -132,9 +135,9 @@ class _AgentCustomerSelectionScreenState extends State<AgentCustomerSelectionScr
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(width: 16),
-                  
+
                   // Customer Details
                   Expanded(
                     child: Column(
@@ -171,10 +174,11 @@ class _AgentCustomerSelectionScreenState extends State<AgentCustomerSelectionScr
                       ],
                     ),
                   ),
-                  
+
                   // Select Button
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       gradient: const LinearGradient(
@@ -317,7 +321,8 @@ class _AgentCustomerSelectionScreenState extends State<AgentCustomerSelectionScr
                   ),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 70, left: 24, right: 24, bottom: 16),
+                  padding: const EdgeInsets.only(
+                      top: 70, left: 24, right: 24, bottom: 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -532,7 +537,8 @@ class _AgentCustomerSelectionScreenState extends State<AgentCustomerSelectionScr
             return SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
-                  return _buildCustomerCard(controller.filteredCustomers[index], index);
+                  return _buildCustomerCard(
+                      controller.filteredCustomers[index], index);
                 },
                 childCount: controller.filteredCustomers.length,
               ),

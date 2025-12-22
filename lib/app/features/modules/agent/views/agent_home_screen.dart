@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:iconsax/iconsax.dart';
+import '../../../../routes/app_routes.dart';
 import '../../../data/services/rate_plan_service.dart';
 import '../../../widgets/agent_sidebar/agent_sidebar_widget.dart';
 import '../../chat/views/conversations_list_screen.dart';
@@ -21,76 +22,94 @@ class AgentHomeScreen extends StatelessWidget {
       }
     });
 
-    return AgentSidebarWidget( 
+    return AgentSidebarWidget(
       initiallyOpen: false,
       child: _HomeContent(),
     );
   }
 }
 
-
 class _HomeContent extends StatelessWidget {
   _HomeContent();
 
   final GetStorage storage = GetStorage();
 
-  // MODIFIED: Agent-specific navigation items
+  // Method to get notification route
+  String _getNotificationRoute() {
+    final userData = storage.read('user_data') ?? {};
+    final roles = userData['roles'] as List<dynamic>? ?? [];
+    final isAgent = roles.any((role) => role.toString().contains('agent'));
+    
+    return isAgent 
+        ? AppRoutes.agentNotifications 
+        : AppRoutes.customerNotifications;
+  }
+
+  // MODIFIED: Agent-specific navigation items WITH NOTIFICATION
   final List<HomeNavItem> _navItems = [
     HomeNavItem(
       icon: Iconsax.driver,
       title: 'Manage Drivers',
       route: '/agent/drivers',
-      color: Color(0xFF10B981), // Emerald green for agents
-      gradient: [Color(0xFF10B981), Color(0xFF34D399)], // Green gradient
+      color: Color(0xFF10B981),
+      gradient: [Color(0xFF10B981), Color(0xFF34D399)],
+    ),
+    // NOTIFICATION ITEM - ADDED
+    HomeNavItem(
+      icon: Iconsax.notification,
+      title: 'Notifications',
+      route: AppRoutes.agentNotifications, // Use constant
+      color: Color(0xFFEC4899),
+      gradient: [Color(0xFFEC4899), Color(0xFFF472B6)],
     ),
     HomeNavItem(
       icon: Iconsax.car,
       title: 'Vehicle Inventory',
       route: '/agent/vehicles',
-      color: Color(0xFF6366F1), // Indigo
-      gradient: [Color(0xFF6366F1), Color(0xFF8B5CF6)], // Indigo to purple
+      color: Color(0xFF6366F1),
+      gradient: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
     ),
     HomeNavItem(
       icon: Iconsax.calendar,
       title: 'Reservations',
       route: '/agent/reservations',
-      color: Color(0xFFF59E0B), // Amber
-      gradient: [Color(0xFFF59E0B), Color(0xFFFBBF24)], // Amber gradient
+      color: Color(0xFFF59E0B),
+      gradient: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
     ),
     HomeNavItem(
       icon: Iconsax.building,
       title: 'My Branch',
       route: '/agent/branch',
-      color: Color(0xFFEF4444), // Red
-      gradient: [Color(0xFFEF4444), Color(0xFFF87171)], // Red gradient
+      color: Color(0xFFEF4444),
+      gradient: [Color(0xFFEF4444), Color(0xFFF87171)],
     ),
     HomeNavItem(
       icon: Iconsax.receipt,
       title: 'Billing',
       route: '/agent/billing',
-      color: Color(0xFF8B5CF6), // Purple
-      gradient: [Color(0xFF8B5CF6), Color(0xFFA78BFA)], // Purple gradient
+      color: Color(0xFF8B5CF6),
+      gradient: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
     ),
     HomeNavItem(
       icon: Iconsax.chart,
       title: 'Analytics',
       route: '/agent/analytics',
-      color: Color(0xFF0EA5E9), // Sky blue
-      gradient: [Color(0xFF0EA5E9), Color(0xFF38BDF8)], // Sky blue gradient
+      color: Color(0xFF0EA5E9),
+      gradient: [Color(0xFF0EA5E9), Color(0xFF38BDF8)],
     ),
     HomeNavItem(
       icon: Iconsax.message,
       title: 'Customer Support',
       route: '/agent/support',
-      color: Color(0xFFEC4899), // Pink
-      gradient: [Color(0xFFEC4899), Color(0xFFF472B6)], // Pink gradient
+      color: Color(0xFFEC4899),
+      gradient: [Color(0xFFEC4899), Color(0xFFF472B6)],
     ),
     HomeNavItem(
       icon: Iconsax.setting,
       title: 'Settings',
       route: '/agent/settings',
-      color: Color(0xFF6B7280), // Gray
-      gradient: [Color(0xFF6B7280), Color(0xFF9CA3AF)], // Gray gradient
+      color: Color(0xFF6B7280),
+      gradient: [Color(0xFF6B7280), Color(0xFF9CA3AF)],
     ),
   ];
 
@@ -112,21 +131,20 @@ class _HomeContent extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFF10B981), // Emerald green
-                    Color(0xFF0EA5E9), // Sky blue
-                    Color(0xFF6366F1), // Indigo
+                    Color(0xFF10B981),
+                    Color(0xFF0EA5E9),
+                    Color(0xFF6366F1),
                   ],
                 ),
               ),
               child: Stack(
                 children: [
-                  // Animated Background Pattern
                   Positioned.fill(
                     child: CustomPaint(
                       painter: _CirclePatternPainter(),
                     ),
                   ),
-                  
+
                   Padding(
                     padding: EdgeInsets.only(
                       top: MediaQuery.of(context).padding.top + 20,
@@ -203,7 +221,7 @@ class _HomeContent extends StatelessWidget {
                                 ),
                               ),
                               SizedBox(width: 18),
-                              
+
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,13 +285,13 @@ class _HomeContent extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                              
+
                               // MODIFIED: Agent Quick Actions
                               Column(
                                 children: [
                                   _buildQuickActionButton(
                                     icon: Iconsax.notification,
-                                    onTap: () => Get.toNamed('/agent/notifications'),
+                                    onTap: () => Get.toNamed(_getNotificationRoute()),
                                   ),
                                   SizedBox(height: 14),
                                   _buildQuickActionButton(
@@ -521,8 +539,8 @@ class _HomeContent extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Color(0xFFF59E0B), // Amber
-                      Color(0xFFEC4899), // Pink
+                      Color(0xFFF59E0B),
+                      Color(0xFFEC4899),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -872,6 +890,8 @@ class _HomeContent extends StatelessWidget {
       onTap: () {
         if (item.route == '/agent/support') {
           Get.to(() => ConversationsListScreen());
+        } else if (item.route == AppRoutes.agentNotifications) {
+          Get.toNamed(AppRoutes.agentNotifications);
         } else {
           try {
             Get.toNamed(item.route);
@@ -1059,7 +1079,6 @@ class _CirclePatternPainter extends CustomPainter {
       ..color = Colors.white.withOpacity(0.04)
       ..style = PaintingStyle.fill;
 
-    // Draw decorative circles in pattern
     canvas.drawCircle(
       Offset(size.width * 0.85, size.height * 0.15),
       90,
@@ -1081,7 +1100,6 @@ class _CirclePatternPainter extends CustomPainter {
       paint,
     );
     
-    // Additional subtle circles for depth
     paint.color = Colors.white.withOpacity(0.02);
     canvas.drawCircle(
       Offset(size.width * 0.5, size.height * 0.4),

@@ -3,13 +3,13 @@ abstract class AppRoutes {
   // Welcome screens
   static const splash = '/splash';
   static const onboarding = '/onboarding';
-  
+
   // Auth screens
   static const login = '/login';
   static const register = '/register';
   static const verifyEmail = '/verify-email';
   static const forgotPassword = '/forgot-password';
-  
+
   // Main app screens
   static const home = '/home';
   static const main = '/main';
@@ -54,7 +54,16 @@ abstract class AppRoutes {
   static const agentReservationList = '/agent/reservations';
   static const agentReservationDetail = '/agent/reservations/detail';
   static const agentCustomerSelection = '/agent/customers/select';
-  
+
+  // Add these routes to your AppRoutes
+  static const String paymentWebview = '/payment-webview';
+  static const String paymentPolling = '/payment-polling';
+  static const String paymentSuccess = '/payment-success';
+
+// Add notification routes
+  static const agentNotifications = '/agent/notifications';
+  static const customerNotifications = '/customer/notifications';
+  static const createNotification = '/agent/notifications/create';
 
   // Helper method to get chat detail with parameters
   static String chatDetailWithId(String conversationId) {
