@@ -5,15 +5,20 @@ import '../../domain/repositories/vehicle_model_repository.dart';
 import '../../domain/repositories/vehicle_repository.dart';
 import '../bindings/app_bindings.dart';
 import '../features/data/models/branch_models/branch_models.dart';
+import '../features/data/services/agent_notification_service.dart';
+import '../features/modules/agent/controllers/agent_notification_controller.dart';
 import '../features/modules/agent/views/agent_create_reservation_screen.dart';
 import '../features/modules/agent/views/agent_customer_selection_screen.dart';
 import '../features/modules/agent/views/agent_home_screen.dart';
+import '../features/modules/agent/views/agent_notification_detail_screen.dart';
+import '../features/modules/agent/views/agent_notification_list_screen.dart';
 import '../features/modules/agent/views/agent_reservation_detail_screen.dart';
 import '../features/modules/agent/views/agent_reservation_list_screen.dart';
 import '../features/modules/auth/views/forgot_password_screen.dart';
 import '../features/modules/auth/views/login_screen.dart';
 import '../features/modules/auth/views/register_screen.dart';
 import '../features/modules/auth/views/verify_email_screen.dart';
+import '../features/modules/bindings/agent_notification_binding.dart';
 import '../features/modules/bindings/agent_reservation_binding.dart';
 import '../features/modules/bindings/branch_binding.dart';
 import '../features/modules/bindings/chat_binding.dart';
@@ -266,7 +271,6 @@ class AppPages {
       binding: AgentReservationBinding(),
     ),
 
-
     // Add this route
     GetPage(
       name: '/agent/navigation',
@@ -274,7 +278,6 @@ class AppPages {
       binding: AuthBinding(), // Or create AgentBinding if needed
     ),
 
-    
     // In your app_pages.dart, add PaymentBinding to payment routes
     GetPage(
       name: AppRoutes.paymentWebview,
@@ -292,7 +295,7 @@ class AppPages {
       binding: PaymentBinding(), // Add this
     ),
 
-      // Add notification pages
+    // Add notification pages
     GetPage(
       name: AppRoutes.agentNotifications,
       page: () => const AgentNotificationsScreen(),
@@ -303,10 +306,29 @@ class AppPages {
       page: () => const CustomerNotificationsScreen(),
       binding: NotificationBinding(),
     ),
+
     GetPage(
       name: AppRoutes.createNotification,
       page: () => CreateNotificationScreen(),
-      binding: NotificationBinding(),
+      binding: AgentNotificationBinding(), // Use the new binding
+    ),
+
+    // Add the NEW agent notification management screens
+    GetPage(
+      name: '/agent/notifications/manage', // This is the new route
+      page: () => AgentNotificationListScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => AgentNotificationService());
+        Get.lazyPut(() => AgentNotificationController());
+      }),
+    ),
+    GetPage(
+      name: '/agent/notifications/detail',
+      page: () => AgentNotificationDetailScreen(),
+      binding: BindingsBuilder(() {
+        // The controller should already be registered from the list screen
+        Get.lazyPut(() => AgentNotificationController());
+      }),
     ),
   ];
 }

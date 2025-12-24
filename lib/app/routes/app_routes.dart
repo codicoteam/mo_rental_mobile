@@ -65,6 +65,10 @@ abstract class AppRoutes {
   static const customerNotifications = '/customer/notifications';
   static const createNotification = '/agent/notifications/create';
 
+  // ADD THESE NEW ROUTES:
+  static const String agentNotificationManage = '/agent/notifications/manage';
+  static const String agentNotificationDetail = '/agent/notifications/detail';
+
   // Helper method to get chat detail with parameters
   static String chatDetailWithId(String conversationId) {
     return '$chatDetail?id=$conversationId';

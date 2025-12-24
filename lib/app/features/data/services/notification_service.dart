@@ -6,24 +6,24 @@ import 'package:get_storage/get_storage.dart';
 
 class NotificationService extends GetxService {
   final GetStorage storage = GetStorage();
-  
-  // Use the same base URL pattern from your existing services
+
   String get _baseUrl => 'http://13.61.185.238:5050/api/v1/notifications';
-  
+
   Future<Map<String, String>> _getHeaders() async {
-    // Use your existing token storage pattern
-    final token = storage.read('auth_token') ?? 
-                 storage.read('token') ?? 
-                 storage.read('access_token');
-    
+    final token = storage.read('auth_token') ??
+        storage.read('token') ??
+        storage.read('access_token');
+
     return {
       'accept': '*/*',
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
     };
   }
-  
-  // Get notifications for current user
+
+  // ========== CORE NOTIFICATION METHODS ==========
+
+  // Get notifications for current user - WITH BETTER ERROR HANDLING
   Future<Map<String, dynamic>> getMyNotifications({
     bool onlyUnread = false,
     bool includeFuture = false,
@@ -32,65 +32,131 @@ class NotificationService extends GetxService {
     String sort = '-created_at',
   }) async {
     try {
+      print('🔄 Fetching notifications from: $_baseUrl/mine');
+      print('📊 Parameters: page=$page, limit=$limit, onlyUnread=$onlyUnread');
+
       final headers = await _getHeaders();
-      final url = Uri.parse('$_baseUrl/mine')
-          .replace(queryParameters: {
-            'onlyUnread': onlyUnread.toString(),
-            'includeFuture': includeFuture.toString(),
-            'page': page.toString(),
-            'limit': limit.toString(),
-            'sort': sort,
-          });
-      
-      final response = await http.get(url, headers: headers);
-      
+      final url = Uri.parse('$_baseUrl/mine').replace(queryParameters: {
+        'onlyUnread': onlyUnread.toString(),
+        'includeFuture': includeFuture.toString(),
+        'page': page.toString(),
+        'limit': limit.toString(),
+        'sort': sort,
+      });
+
+      print('🌐 URL: $url');
+
+      final response = await http
+          .get(
+            url,
+            headers: headers,
+          )
+          .timeout(Duration(seconds: 30));
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final data = jsonDecode(response.body);
+        print('✅ Successfully loaded notifications');
+        print('📋 Data structure: ${data.keys.toList()}');
+        print('📋 Success: ${data['success']}');
+        print('📋 Message: ${data['message']}');
+        print('📋 Data length: ${(data['data'] as List?)?.length ?? 0}');
+
+        return data;
+      } else if (response.statusCode == 500) {
+        print('❌ API Error 500: Server error');
+        print('❌ Response: ${response.body}');
+
+        // Parse error message
+        String errorMessage = 'Server error';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (_) {
+          errorMessage = response.body;
+        }
+
+        // Return a safe response structure to prevent app crash
+        return {
+          'success': false,
+          'message': errorMessage,
+          'data': [],
+          'pagination': {
+            'page': page,
+            'total': 0,
+            'pages': 0,
+            'hasNext': false,
+          }
+        };
       } else {
+        print('❌ Failed with status: ${response.statusCode}');
+        print('❌ Response: ${response.body}');
+
         throw Exception('Failed to load notifications: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error in getMyNotifications: $e');
-      rethrow;
+      print('🔥 Error in getMyNotifications: $e');
+      print('🔥 Stack trace: ${e.toString()}');
+
+      // Return a safe structure to prevent UI crash
+      return {
+        'success': false,
+        'message': e.toString(),
+        'data': [],
+        'pagination': {
+          'page': page,
+          'total': 0,
+          'pages': 0,
+          'hasNext': false,
+        }
+      };
     }
   }
-  
+
   // Mark single notification as read
   Future<bool> markAsRead(String notificationId) async {
     try {
+      print('📝 Marking notification $notificationId as read');
       final headers = await _getHeaders();
       final url = Uri.parse('$_baseUrl/$notificationId/read');
-      
+
       final response = await http.post(url, headers: headers);
-      
+
+      print('📡 Mark as read response: ${response.statusCode}');
+
       return response.statusCode == 200;
     } catch (e) {
       print('Error in markAsRead: $e');
       return false;
     }
   }
-  
+
   // Bulk mark notifications as read
   Future<bool> markBulkAsRead(List<String> notificationIds) async {
     try {
+      print('📝 Marking ${notificationIds.length} notifications as read');
       final headers = await _getHeaders();
       final url = Uri.parse('$_baseUrl/bulk/read');
-      
+
       final response = await http.post(
         url,
         headers: headers,
         body: jsonEncode({'ids': notificationIds}),
       );
-      
+
+      print('📡 Bulk mark as read response: ${response.statusCode}');
+
       return response.statusCode == 200;
     } catch (e) {
       print('Error in markBulkAsRead: $e');
       return false;
     }
   }
-  
-  // ========== ADD THESE MISSING METHODS ==========
-  
+
+  // ========== AGENT-ONLY METHODS ==========
+
   // Send notification to specific customer (for agents)
   Future<bool> sendNotificationToCustomer({
     required String customerId,
@@ -100,11 +166,15 @@ class NotificationService extends GetxService {
     Map<String, dynamic>? data,
   }) async {
     try {
+      print('📤 Sending notification to customer: $customerId');
+      print('📝 Title: $title');
+      print('💬 Message: $message');
+
       final headers = await _getHeaders();
-      
+
       // Check if endpoint exists - you may need to create this endpoint
       final url = Uri.parse('$_baseUrl/send');
-      
+
       final body = {
         'recipientId': customerId,
         'title': title,
@@ -112,20 +182,23 @@ class NotificationService extends GetxService {
         'type': type ?? 'direct',
         'data': data ?? {},
       };
-      
+
       final response = await http.post(
         url,
         headers: headers,
         body: jsonEncode(body),
       );
-      
+
+      print('📡 Send notification response: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       print('Error in sendNotificationToCustomer: $e');
       return false;
     }
   }
-  
+
   // Create system notification (for agents)
   Future<bool> createSystemNotification({
     required String title,
@@ -135,11 +208,16 @@ class NotificationService extends GetxService {
     Map<String, dynamic>? data,
   }) async {
     try {
+      print('📢 Creating system notification');
+      print('📝 Title: $title');
+      print('💬 Message: $message');
+      print('👥 Audience: ${audience ?? ['all']}');
+
       final headers = await _getHeaders();
-      
+
       // Check if endpoint exists - you may need to create this endpoint
       final url = Uri.parse('$_baseUrl/system');
-      
+
       final body = {
         'title': title,
         'message': message,
@@ -147,22 +225,25 @@ class NotificationService extends GetxService {
         'type': type ?? 'system',
         'data': data ?? {},
       };
-      
+
       final response = await http.post(
         url,
         headers: headers,
         body: jsonEncode(body),
       );
-      
+
+      print('📡 System notification response: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       print('Error in createSystemNotification: $e');
       return false;
     }
   }
-  
+
   // ========== ROLE CHECK METHODS ==========
-  
+
   // Get user role from your existing auth system
   String? get _userRole {
     final userData = storage.read('user_data');
@@ -172,10 +253,24 @@ class NotificationService extends GetxService {
     }
     return 'customer';
   }
-  
-  bool get isAgent => _userRole?.contains('agent') == true;
+
+  bool get isAgent => _userRole?.toLowerCase().contains('agent') == true;
   bool get isCustomer => !isAgent;
-  
+
+  // Get user email for debugging
+  String? get userEmail {
+    final userData = storage.read('user_data');
+    return userData?['email']?.toString();
+  }
+
+  // Get user ID for debugging
+  String? get userId {
+    final userData = storage.read('user_data');
+    return userData?['_id']?.toString() ?? userData?['id']?.toString();
+  }
+
+  // ========== ADDITIONAL AGENT METHODS ==========
+
   // Get all notifications (for agents to view all)
   Future<Map<String, dynamic>> getAllNotifications({
     int page = 1,
@@ -187,28 +282,32 @@ class NotificationService extends GetxService {
       if (!isAgent) {
         throw Exception('Unauthorized: Only agents can view all notifications');
       }
-      
+
+      print('🔄 Agent: Fetching ALL notifications');
+
       final headers = await _getHeaders();
-      final url = Uri.parse('$_baseUrl/all')
-          .replace(queryParameters: {
-            'page': page.toString(),
-            'limit': limit.toString(),
-            'sort': sort,
-          });
-      
+      final url = Uri.parse('$_baseUrl/all').replace(queryParameters: {
+        'page': page.toString(),
+        'limit': limit.toString(),
+        'sort': sort,
+      });
+
       final response = await http.get(url, headers: headers);
-      
+
+      print('📡 All notifications response: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Failed to load all notifications: ${response.statusCode}');
+        throw Exception(
+            'Failed to load all notifications: ${response.statusCode}');
       }
     } catch (e) {
       print('Error in getAllNotifications: $e');
       rethrow;
     }
   }
-  
+
   // Delete notification (for agents)
   Future<bool> deleteNotification(String notificationId) async {
     try {
@@ -216,40 +315,78 @@ class NotificationService extends GetxService {
       if (!isAgent) {
         throw Exception('Unauthorized: Only agents can delete notifications');
       }
-      
+
+      print('🗑️ Deleting notification: $notificationId');
+
       final headers = await _getHeaders();
       final url = Uri.parse('$_baseUrl/$notificationId');
-      
+
       final response = await http.delete(url, headers: headers);
-      
+
+      print('📡 Delete notification response: ${response.statusCode}');
+
       return response.statusCode == 200;
     } catch (e) {
       print('Error in deleteNotification: $e');
       return false;
     }
   }
-  
+
   // Get notification statistics (for agents dashboard)
   Future<Map<String, dynamic>> getNotificationStats() async {
     try {
       // Only agents should access this
       if (!isAgent) {
-        throw Exception('Unauthorized: Only agents can view notification stats');
+        throw Exception(
+            'Unauthorized: Only agents can view notification stats');
       }
-      
+
+      print('📊 Fetching notification statistics');
+
       final headers = await _getHeaders();
       final url = Uri.parse('$_baseUrl/stats');
-      
+
       final response = await http.get(url, headers: headers);
-      
+
+      print('📡 Stats response: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Failed to load notification stats: ${response.statusCode}');
+        throw Exception(
+            'Failed to load notification stats: ${response.statusCode}');
       }
     } catch (e) {
       print('Error in getNotificationStats: $e');
       rethrow;
     }
   }
+
+  // ========== DEBUG METHODS ==========
+
+  void printDebugInfo() {
+    print('\n🔵🔵🔵 NOTIFICATION SERVICE DEBUG 🔵🔵🔵');
+    print('User ID: $userId');
+    print('User Email: $userEmail');
+    print('User Role: $_userRole');
+    print('Is Agent: $isAgent');
+    print('Is Customer: $isCustomer');
+
+    final token = storage.read('auth_token') ?? storage.read('token');
+    print('Token exists: ${token != null}');
+    if (token != null) {
+      print(
+          'Token preview: ${token.toString().substring(0, min(30, token.toString().length))}...');
+    }
+
+    final userData = storage.read('user_data');
+    print('User data exists: ${userData != null}');
+    if (userData != null) {
+      print('User data keys: ${userData.keys.toList()}');
+    }
+
+    print('🔵🔵🔵 END DEBUG 🔵🔵🔵\n');
+  }
+
+  int min(int a, int b) => a < b ? a : b;
 }

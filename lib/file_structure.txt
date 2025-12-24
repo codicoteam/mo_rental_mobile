@@ -653,35 +653,10 @@ Add additional visual effects?
 
 
 
+    lib/features/modules/notifications/views/agent_notification_list_screen.dart
 
+    lib/features/modules/notifications/views/agent_notification_detail_screen.dart
 
+    lib/features/modules/notifications/controllers/agent_notification_controller.dart
 
-Solution 4: Hybrid Approach (Recommended)
-
-Combine the above for a complete solution:
-Step-by-Step Flow:
-dart
-
-// 1. Add role selection during registration
-class RegisterScreen extends StatelessWidget {
-  // Add this to your registration form:
-  DropdownButtonFormField<String>(
-    value: _selectedRole,
-    items: [
-      DropdownMenuItem(value: 'customer', child: Text('Customer')),
-      DropdownMenuItem(value: 'agent', child: Text('Agent (Request Access)')),
-    ],
-    onChanged: (value) {
-      _selectedRole = value;
-      if (value == 'agent') {
-        // Show additional agent fields
-        _showAgentFields = true;
-      }
-    },
-  ),
-  
-  // If agent selected, collect:
-  // - Employee ID
-  // - Company name
-  // - Manager email for approval
-}
+    lib/features/data/services/agent_notification_service.dart
