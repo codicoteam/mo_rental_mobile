@@ -6,7 +6,7 @@ import '../../../data/services/agent_notification_service.dart';
 class AgentNotificationController extends GetxController {
   final AgentNotificationService _service = Get.find();
 
-  // State for notification list
+  // Reactive variables
   final RxList<dynamic> agentNotifications = <dynamic>[].obs;
   final RxMap<String, dynamic> notificationStats = <String, dynamic>{}.obs;
   final RxBool isLoading = false.obs;
@@ -16,15 +16,13 @@ class AgentNotificationController extends GetxController {
   final RxInt totalPages = 1.obs;
   final RxInt totalItems = 0.obs;
 
-  // State for single notification
   final RxMap<String, dynamic> selectedNotification = <String, dynamic>{}.obs;
   final RxBool isLoadingDetail = false.obs;
   final RxBool hasErrorDetail = false.obs;
   final RxString errorMessageDetail = ''.obs;
 
   // Filter states
-  final RxString filterStatus =
-      ''.obs; // 'draft', 'scheduled', 'sent', or empty for all
+  final RxString filterStatus = ''.obs;
   final RxString filterType = ''.obs;
   final RxString filterPriority = ''.obs;
 
@@ -35,17 +33,22 @@ class AgentNotificationController extends GetxController {
     loadAgentNotifications();
   }
 
-  // ========== LOAD ALL AGENT NOTIFICATIONS ==========
-  Future<void> loadAgentNotifications(
-      {int page = 1, bool refresh = false}) async {
+  // ========== LOAD NOTIFICATIONS ==========
+  Future<void> loadAgentNotifications({
+    int page = 1,
+    bool refresh = false,
+  }) async {
     try {
+      if (isLoading.value) return; // Prevent multiple calls
+      
       print('🔄 Loading agent notifications...');
-      isLoading.value = true;
-      hasError.value = false;
-      errorMessage.value = '';
+      isLoading(true);
+      hasError(false);
+      errorMessage('');
 
       if (refresh) {
-        currentPage.value = 1;
+        currentPage(page);
+        agentNotifications.clear(); // Clear existing items
       }
 
       final response = await _service.getAllNotifications(
@@ -56,33 +59,39 @@ class AgentNotificationController extends GetxController {
         limit: 20,
       );
 
+      print('🔍 Response structure: ${response.keys.toList()}');
+      
       if (response['success'] == true) {
+        final items = response['items'] as List<dynamic>;
+        print('📋 Received ${items.length} items');
+        
         if (page == 1) {
-          agentNotifications.value = response['items'] ?? [];
+          // Use assignAll for RxList
+          agentNotifications.assignAll(items);
         } else {
-          agentNotifications.addAll(response['items'] ?? []);
+          agentNotifications.addAll(items);
         }
 
-        currentPage.value = response['page'] ?? 1;
-        totalPages.value = response['pages'] ?? 1;
-        totalItems.value = response['total'] ?? 0;
+        // Update pagination
+        currentPage(response['page'] as int? ?? page);
+        totalPages(response['pages'] as int? ?? 1);
+        totalItems(response['total'] as int? ?? items.length);
 
         // Calculate stats
-        notificationStats.value = _service.calculateStats(agentNotifications);
+        notificationStats(_service.calculateStats(agentNotifications.toList()));
 
         print('✅ Loaded ${agentNotifications.length} notifications');
-        // ignore: invalid_use_of_protected_member
-        print('📊 Stats: ${notificationStats.value}');
+        print('📊 Stats: ${notificationStats}');
         print('📊 Page: ${currentPage.value}/${totalPages.value}');
       } else {
-        hasError.value = true;
-        errorMessage.value =
-            response['message'] ?? 'Failed to load notifications';
+        hasError(true);
+        errorMessage(response['message'] ?? 'Failed to load notifications');
+        print('❌ API returned false: ${errorMessage.value}');
       }
     } catch (e) {
       print('🔥 Error loading agent notifications: $e');
-      hasError.value = true;
-      errorMessage.value = e.toString();
+      hasError(true);
+      errorMessage(e.toString());
 
       Get.snackbar(
         'Error',
@@ -91,34 +100,49 @@ class AgentNotificationController extends GetxController {
         colorText: Colors.white,
       );
     } finally {
-      isLoading.value = false;
+      isLoading(false);
+      update(); // Trigger UI update
     }
   }
 
-  // ========== LOAD SINGLE NOTIFICATION DETAILS ==========
+  // ========== LOAD NOTIFICATION DETAILS ==========
   Future<void> loadNotificationDetail(String notificationId) async {
     try {
       print('🔍 Loading notification detail: $notificationId');
-      isLoadingDetail.value = true;
-      hasErrorDetail.value = false;
-      errorMessageDetail.value = '';
+      isLoadingDetail(true);
+      hasErrorDetail(false);
+      errorMessageDetail('');
+      update(['notification_detail']);
 
       final response = await _service.getNotificationById(notificationId);
 
+      print('🔍 Detail response keys: ${response.keys.toList()}');
+      
       if (response['success'] == true) {
-        selectedNotification.value = response['notification'] ?? {};
-        print('✅ Loaded notification detail: ${selectedNotification['title']}');
+        final notificationData = Map<String, dynamic>.from(response['notification'] ?? {});
+        selectedNotification(notificationData);
+        
+        print('✅ Loaded notification detail: ${notificationData['title']}');
+        print('🔍 Selected notification keys: ${notificationData.keys.toList()}');
       } else {
-        hasErrorDetail.value = true;
-        errorMessageDetail.value =
-            response['message'] ?? 'Failed to load notification';
+        hasErrorDetail(true);
+        errorMessageDetail(response['message'] ?? 'Failed to load notification');
+        print('❌ Detail API returned false: ${errorMessageDetail.value}');
       }
     } catch (e) {
       print('🔥 Error loading notification detail: $e');
-      hasErrorDetail.value = true;
-      errorMessageDetail.value = e.toString();
+      hasErrorDetail(true);
+      errorMessageDetail(e.toString());
+      
+      Get.snackbar(
+        'Error',
+        'Failed to load notification details: ${e.toString()}',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } finally {
-      isLoadingDetail.value = false;
+      isLoadingDetail(false);
+      update(['notification_detail']);
     }
   }
 
@@ -172,23 +196,286 @@ class AgentNotificationController extends GetxController {
     }
   }
 
+  // ========== UPDATE NOTIFICATION ==========
+  Future<Map<String, dynamic>> updateNotification({
+    required String notificationId,
+    String? title,
+    String? message,
+    String? type,
+    String? priority,
+    Map<String, dynamic>? audience,
+    List<String>? channels,
+    DateTime? sendAt,
+    DateTime? expiresAt,
+    String? status,
+    bool? isActive,
+    String? actionText,
+    String? actionUrl,
+    Map<String, dynamic>? data,
+  }) async {
+    try {
+      print('📝 Updating notification: $notificationId');
+
+      final response = await _service.updateNotification(
+        notificationId: notificationId,
+        title: title,
+        message: message,
+        type: type,
+        priority: priority,
+        audience: audience,
+        channels: channels,
+        sendAt: sendAt,
+        expiresAt: expiresAt,
+        status: status,
+        isActive: isActive,
+        actionText: actionText,
+        actionUrl: actionUrl,
+        data: data,
+      );
+
+      if (response['success'] == true) {
+        Get.snackbar(
+          'Success',
+          'Notification updated successfully',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+
+        // Refresh the notification details
+        await loadNotificationDetail(notificationId);
+        
+        // Refresh the list
+        await loadAgentNotifications(refresh: true);
+
+        return {'success': true, 'notification': response['notification']};
+      } else {
+        throw Exception(response['message'] ?? 'Failed to update notification');
+      }
+    } catch (e) {
+      print('🔥 Error updating notification: $e');
+
+      Get.snackbar(
+        'Error',
+        'Failed to update notification: ${e.toString()}',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  // ========== SCHEDULE NOTIFICATION ==========
+  Future<Map<String, dynamic>> scheduleNotification({
+    required String notificationId,
+    required DateTime sendAt,
+  }) async {
+    try {
+      print('📅 Scheduling notification: $notificationId');
+
+      final response = await _service.scheduleNotification(
+        notificationId: notificationId,
+        sendAt: sendAt,
+      );
+
+      if (response['success'] == true) {
+        Get.snackbar(
+          'Success',
+          'Notification scheduled successfully',
+          backgroundColor: Colors.blue,
+          colorText: Colors.white,
+        );
+
+        // Refresh the notification details
+        await loadNotificationDetail(notificationId);
+        
+        // Refresh the list
+        await loadAgentNotifications(refresh: true);
+
+        return {'success': true, 'notification': response['notification']};
+      } else {
+        throw Exception(response['message'] ?? 'Failed to schedule notification');
+      }
+    } catch (e) {
+      print('🔥 Error scheduling notification: $e');
+
+      Get.snackbar(
+        'Error',
+        'Failed to schedule notification: ${e.toString()}',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  // ========== SEND NOTIFICATION IMMEDIATELY ==========
+  Future<Map<String, dynamic>> sendNotificationImmediately({
+    required String notificationId,
+  }) async {
+    try {
+      print('🚀 Sending notification immediately: $notificationId');
+
+      final response = await _service.sendNotificationImmediately(
+        notificationId: notificationId,
+      );
+
+      if (response['success'] == true) {
+        Get.snackbar(
+          'Success',
+          'Notification sent successfully',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+
+        // Refresh the notification details
+        await loadNotificationDetail(notificationId);
+        
+        // Refresh the list
+        await loadAgentNotifications(refresh: true);
+
+        return {'success': true, 'notification': response['notification']};
+      } else {
+        throw Exception(response['message'] ?? 'Failed to send notification');
+      }
+    } catch (e) {
+      print('🔥 Error sending notification: $e');
+
+      Get.snackbar(
+        'Error',
+        'Failed to send notification: ${e.toString()}',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  // ========== CANCEL NOTIFICATION ==========
+  Future<Map<String, dynamic>> cancelNotification({
+    required String notificationId,
+  }) async {
+    try {
+      print('❌ Cancelling notification: $notificationId');
+
+      final response = await _service.cancelNotification(
+        notificationId: notificationId,
+      );
+
+      if (response['success'] == true) {
+        Get.snackbar(
+          'Success',
+          'Notification cancelled successfully',
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+
+        // Refresh the notification details
+        await loadNotificationDetail(notificationId);
+        
+        // Refresh the list
+        await loadAgentNotifications(refresh: true);
+
+        return {'success': true, 'notification': response['notification']};
+      } else {
+        throw Exception(response['message'] ?? 'Failed to cancel notification');
+      }
+    } catch (e) {
+      print('🔥 Error cancelling notification: $e');
+
+      Get.snackbar(
+        'Error',
+        'Failed to cancel notification: ${e.toString()}',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  // ========== QUICK ACTION METHODS ==========
+
+  // Quick update title and message
+  Future<Map<String, dynamic>> quickUpdateNotification({
+    required String notificationId,
+    required String title,
+    required String message,
+  }) async {
+    return await updateNotification(
+      notificationId: notificationId,
+      title: title,
+      message: message,
+    );
+  }
+
+  // Reschedule notification
+  Future<Map<String, dynamic>> rescheduleNotification({
+    required String notificationId,
+    required DateTime newSendAt,
+  }) async {
+    return await scheduleNotification(
+      notificationId: notificationId,
+      sendAt: newSendAt,
+    );
+  }
+
+  // Duplicate notification
+  Future<Map<String, dynamic>> duplicateNotification({
+    required String notificationId,
+  }) async {
+    try {
+      // First, get the original notification
+      final original = getNotificationByIdFromCache(notificationId);
+      if (original == null) {
+        throw Exception('Notification not found in cache');
+      }
+
+      // Create a new notification with same data
+      final response = await createNewNotification(
+        title: '${original['title']} (Copy)',
+        message: original['message']?.toString() ?? '',
+        type: original['type']?.toString() ?? 'info',
+        audience: original['audience'] != null 
+            ? Map<String, dynamic>.from(original['audience'] as Map)
+            : _service.createAudience(),
+        status: 'draft',
+      );
+
+      return response;
+    } catch (e) {
+      print('🔥 Error duplicating notification: $e');
+
+      Get.snackbar(
+        'Error',
+        'Failed to duplicate notification: ${e.toString()}',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
   // ========== FILTER METHODS ==========
   void applyFilters({
     String? status,
     String? type,
     String? priority,
   }) {
-    if (status != null) filterStatus.value = status;
-    if (type != null) filterType.value = type;
-    if (priority != null) filterPriority.value = priority;
+    if (status != null) filterStatus(status);
+    if (type != null) filterType(type);
+    if (priority != null) filterPriority(priority);
 
     loadAgentNotifications(refresh: true);
   }
 
   void clearFilters() {
-    filterStatus.value = '';
-    filterType.value = '';
-    filterPriority.value = '';
+    filterStatus('');
+    filterType('');
+    filterPriority('');
 
     loadAgentNotifications(refresh: true);
   }
@@ -226,7 +513,11 @@ class AgentNotificationController extends GetxController {
 
   // Get notification by ID from cache
   Map<String, dynamic>? getNotificationByIdFromCache(String id) {
-    return agentNotifications.firstWhereOrNull((n) => n['_id'] == id);
+    try {
+      return agentNotifications.firstWhereOrNull((n) => n['_id'] == id);
+    } catch (e) {
+      return null;
+    }
   }
 
   // Refresh notifications
@@ -239,5 +530,65 @@ class AgentNotificationController extends GetxController {
     if (currentPage.value < totalPages.value && !isLoading.value) {
       await loadAgentNotifications(page: currentPage.value + 1);
     }
+  }
+
+  // Clear selected notification
+  void clearSelectedNotification() {
+    selectedNotification.clear();
+    hasErrorDetail(false);
+    errorMessageDetail('');
+    update(['notification_detail']);
+  }
+
+  // Helper method to get notification stats safely
+  Map<String, dynamic> get stats => notificationStats;
+
+  // Helper method to get selected notification safely
+  Map<String, dynamic> get selectedNotificationData {
+    try {
+      return Map<String, dynamic>.from(selectedNotification);
+    } catch (e) {
+      return {};
+    }
+  }
+
+  // Check if selected notification is empty
+  bool get isSelectedNotificationEmpty => selectedNotification.isEmpty;
+
+  // ========== STATUS CHECK METHODS ==========
+  bool canModifySelectedNotification() {
+    if (selectedNotification.isEmpty) return false;
+    return _service.canModifyNotification(selectedNotification);
+  }
+
+  bool canSendSelectedNotification() {
+    if (selectedNotification.isEmpty) return false;
+    return _service.canSendNotification(selectedNotification);
+  }
+
+  bool canCancelSelectedNotification() {
+    if (selectedNotification.isEmpty) return false;
+    return _service.canCancelNotification(selectedNotification);
+  }
+
+  String get selectedNotificationStatus {
+    if (selectedNotification.isEmpty) return '';
+    return selectedNotification['status']?.toString() ?? 'draft';
+  }
+
+  bool get isSelectedNotificationDraft {
+    return selectedNotificationStatus == 'draft';
+  }
+
+  bool get isSelectedNotificationScheduled {
+    return selectedNotificationStatus == 'scheduled';
+  }
+
+  bool get isSelectedNotificationSent {
+    return selectedNotificationStatus == 'sent';
+  }
+
+  bool get isSelectedNotificationCancelled {
+    return selectedNotificationStatus == 'cancelled';
   }
 }

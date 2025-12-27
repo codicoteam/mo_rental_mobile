@@ -12,26 +12,26 @@ class AgentNotificationListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize controller
-    if (!Get.isRegistered<AgentNotificationController>()) {
-      Get.put(AgentNotificationController());
-    }
-
+    // Initialize controller if not already
+    final controller = Get.put(AgentNotificationController());
+    
     return AgentSidebarWidget(
       initiallyOpen: false,
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text('Notification Management',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1A1A),
-              )),
+          title: Obx(() => Text(
+            'Notification Management (${controller.totalItems.value})',
+            style: TextStyle(
+              fontSize: 20, // Smaller font
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A1A),
+            ),
+          )),
           actions: [
             // Filter button
             IconButton(
-              onPressed: () => _showFilterDialog(),
+              onPressed: () => _showFilterDialog(controller),
               icon: Icon(Iconsax.filter, color: Color(0xFF10B981)),
               tooltip: 'Filter notifications',
             ),
@@ -64,11 +64,9 @@ class AgentNotificationListScreen extends StatelessWidget {
             ),
           ],
         ),
-        body: GetBuilder<AgentNotificationController>(
-          builder: (controller) {
-            return _buildBody(controller);
-          },
-        ),
+        body: Obx(() {
+          return _buildBody(controller);
+        }),
       ),
     );
   }
@@ -139,13 +137,13 @@ class AgentNotificationListScreen extends StatelessWidget {
           SizedBox(height: 10),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 40),
-            child: Text(
+            child: Obx(() => Text(
               controller.errorMessage.value,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.grey.shade600,
               ),
-            ),
+            )),
           ),
           SizedBox(height: 30),
           ElevatedButton(
@@ -166,132 +164,139 @@ class AgentNotificationListScreen extends StatelessWidget {
   }
 
   Widget _buildStatsHeader(AgentNotificationController controller) {
-    final stats = controller.notificationStats;
-
-    return Container(
-      padding: EdgeInsets.all(20),
-      margin: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF10B981), Color(0xFF0EA5E9)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 15,
-            offset: Offset(0, 5),
+    return Obx(() {
+      final stats = controller.notificationStats;
+      return Container(
+        padding: EdgeInsets.all(16), // Reduced padding
+        margin: EdgeInsets.all(12), // Reduced margin
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF10B981), Color(0xFF0EA5E9)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Notification Statistics',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
+          borderRadius: BorderRadius.circular(16), // Slightly smaller
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10, // Smaller shadow
+              offset: Offset(0, 3),
             ),
-          ),
-          SizedBox(height: 15),
-          Row(
-            children: [
-              _buildStatCard(
-                title: 'Total',
-                value: '${stats['total'] ?? 0}',
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Notification Statistics',
+              style: TextStyle(
                 color: Colors.white,
+                fontSize: 16, // Smaller
+                fontWeight: FontWeight.w600,
               ),
-              SizedBox(width: 10),
-              _buildStatCard(
-                title: 'Draft',
-                value: '${stats['draft'] ?? 0}',
-                color: Colors.white,
+            ),
+            SizedBox(height: 12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildStatCard(
+                    title: 'Total',
+                    value: '${stats['total'] ?? 0}',
+                    color: Colors.white,
+                  ),
+                  SizedBox(width: 8),
+                  _buildStatCard(
+                    title: 'Draft',
+                    value: '${stats['draft'] ?? 0}',
+                    color: Colors.white,
+                  ),
+                  SizedBox(width: 8),
+                  _buildStatCard(
+                    title: 'Scheduled',
+                    value: '${stats['scheduled'] ?? 0}',
+                    color: Colors.white,
+                  ),
+                  SizedBox(width: 8),
+                  _buildStatCard(
+                    title: 'Sent',
+                    value: '${stats['sent'] ?? 0}',
+                    color: Colors.white,
+                  ),
+                ],
               ),
-              SizedBox(width: 10),
-              _buildStatCard(
-                title: 'Scheduled',
-                value: '${stats['scheduled'] ?? 0}',
-                color: Colors.white,
-              ),
-              SizedBox(width: 10),
-              _buildStatCard(
-                title: 'Sent',
-                value: '${stats['sent'] ?? 0}',
-                color: Colors.white,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildFilterChips(AgentNotificationController controller) {
-    final hasFilters = controller.filterStatus.value.isNotEmpty ||
-        controller.filterType.value.isNotEmpty ||
-        controller.filterPriority.value.isNotEmpty;
+    return Obx(() {
+      final hasFilters = controller.filterStatus.value.isNotEmpty ||
+          controller.filterType.value.isNotEmpty ||
+          controller.filterPriority.value.isNotEmpty;
 
-    if (!hasFilters) return SizedBox();
+      if (!hasFilters) return SizedBox();
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Wrap(
-        spacing: 8,
-        children: [
-          if (controller.filterStatus.value.isNotEmpty)
-            Chip(
-              label: Text('Status: ${controller.filterStatus.value}'),
-              deleteIcon: Icon(Iconsax.close_circle, size: 14),
-              onDeleted: () => controller.applyFilters(status: ''),
-            ),
-          if (controller.filterType.value.isNotEmpty)
-            Chip(
-              label: Text('Type: ${controller.filterType.value}'),
-              deleteIcon: Icon(Iconsax.close_circle, size: 14),
-              onDeleted: () => controller.applyFilters(type: ''),
-            ),
-          if (controller.filterPriority.value.isNotEmpty)
-            Chip(
-              label: Text('Priority: ${controller.filterPriority.value}'),
-              deleteIcon: Icon(Iconsax.close_circle, size: 14),
-              onDeleted: () => controller.applyFilters(priority: ''),
-            ),
-          if (hasFilters)
-            TextButton(
-              onPressed: () => controller.clearFilters(),
-              child:
-                  Text('Clear All', style: TextStyle(color: Color(0xFF10B981))),
-            ),
-        ],
-      ),
-    );
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Wrap(
+          spacing: 8,
+          children: [
+            if (controller.filterStatus.value.isNotEmpty)
+              Chip(
+                label: Text('Status: ${controller.filterStatus.value}'),
+                deleteIcon: Icon(Iconsax.close_circle, size: 14),
+                onDeleted: () => controller.applyFilters(status: ''),
+              ),
+            if (controller.filterType.value.isNotEmpty)
+              Chip(
+                label: Text('Type: ${controller.filterType.value}'),
+                deleteIcon: Icon(Iconsax.close_circle, size: 14),
+                onDeleted: () => controller.applyFilters(type: ''),
+              ),
+            if (controller.filterPriority.value.isNotEmpty)
+              Chip(
+                label: Text('Priority: ${controller.filterPriority.value}'),
+                deleteIcon: Icon(Iconsax.close_circle, size: 14),
+                onDeleted: () => controller.applyFilters(priority: ''),
+              ),
+            if (hasFilters)
+              TextButton(
+                onPressed: () => controller.clearFilters(),
+                child: Text('Clear All', style: TextStyle(color: Color(0xFF10B981))),
+              ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildNotificationsList(AgentNotificationController controller) {
-    return RefreshIndicator(
-      onRefresh: () => controller.refreshNotifications(),
-      child: ListView.builder(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        itemCount: controller.agentNotifications.length +
-            (controller.isLoading.value ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == controller.agentNotifications.length) {
-            if (controller.currentPage.value < controller.totalPages.value) {
-              controller.loadNextPage();
-              return _buildLoadingMore();
+    return Obx(() {
+      return RefreshIndicator(
+        onRefresh: () => controller.refreshNotifications(),
+        child: ListView.builder(
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Reduced padding
+          itemCount: controller.agentNotifications.length +
+              (controller.isLoading.value ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == controller.agentNotifications.length) {
+              if (controller.currentPage.value < controller.totalPages.value) {
+                controller.loadNextPage();
+                return _buildLoadingMore();
+              }
+              return SizedBox();
             }
-            return SizedBox();
-          }
 
-          final notification = controller.agentNotifications[index];
-          return _buildNotificationCard(notification);
-        },
-      ),
-    );
+            final notification = controller.agentNotifications[index];
+            return _buildNotificationCard(notification);
+          },
+        ),
+      );
+    });
   }
 
   Widget _buildNotificationCard(Map<String, dynamic> notification) {
@@ -324,18 +329,18 @@ class AgentNotificationListScreen extends StatelessWidget {
     }
 
     return Card(
-      margin: EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.symmetric(horizontal: 8, vertical: 6), // Reduced margin
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12), // Slightly smaller
       ),
       child: InkWell(
         onTap: () => Get.to(
           () => AgentNotificationDetailScreen(),
           arguments: {'notificationId': notification['_id']},
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.all(12), // Reduced padding
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -346,7 +351,7 @@ class AgentNotificationListScreen extends StatelessWidget {
                     child: Text(
                       title,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 14, // Smaller
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF1A1A1A),
                       ),
@@ -355,23 +360,27 @@ class AgentNotificationListScreen extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    constraints: BoxConstraints(maxWidth: 80), // Constrain width
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4), // Smaller
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(6), // Smaller
                       border: Border.all(color: statusColor.withOpacity(0.3)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(statusIcon, size: 12, color: statusColor),
-                        SizedBox(width: 4),
-                        Text(
-                          status.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: statusColor,
+                        Icon(statusIcon, size: 10, color: statusColor), // Smaller
+                        SizedBox(width: 2),
+                        Flexible(
+                          child: Text(
+                            status.length > 6 ? status.substring(0, 6).toUpperCase() : status.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 8, // Smaller
+                              fontWeight: FontWeight.bold,
+                              color: statusColor,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -379,52 +388,65 @@ class AgentNotificationListScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 8),
-              Text(
-                message,
-                style: TextStyle(
-                  color: Colors.grey.shade700,
-                  fontSize: 14,
+              SizedBox(height: 6),
+              Container(
+                width: double.infinity,
+                child: Text(
+                  message,
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    fontSize: 12, // Smaller
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
-              SizedBox(height: 12),
+              SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Icon(Iconsax.tag, size: 14, color: Colors.grey.shade500),
-                      SizedBox(width: 4),
-                      Text(
-                        type.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
+                  Flexible(
+                    child: Row(
+                      children: [
+                        Icon(Iconsax.tag, size: 12, color: Colors.grey.shade500), // Smaller
+                        SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            type.length > 8 ? '${type.substring(0, 8)}..' : type.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 10, // Smaller
+                              color: Colors.grey.shade600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 12),
-                      Icon(Iconsax.people,
-                          size: 14, color: Colors.grey.shade500),
-                      SizedBox(width: 4),
-                      Text(
-                        audience.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
+                        SizedBox(width: 8),
+                        Icon(Iconsax.people, size: 12, color: Colors.grey.shade500), // Smaller
+                        SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            audience.length > 6 ? '${audience.substring(0, 6)}..' : audience.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 10, // Smaller
+                              color: Colors.grey.shade600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  Text(
-                    createdAt != null
-                        ? DateFormat('MMM dd, HH:mm')
-                            .format(DateTime.parse(createdAt))
-                        : '',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade500,
+                  Flexible(
+                    child: Text(
+                      createdAt != null
+                          ? DateFormat('MMM dd')
+                              .format(DateTime.parse(createdAt)) // Shorter format
+                          : '',
+                      style: TextStyle(
+                        fontSize: 10, // Smaller
+                        color: Colors.grey.shade500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -436,53 +458,53 @@ class AgentNotificationListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(
-      {required String title, required String value, required Color color}) {
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withOpacity(0.25)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              value,
-              style: TextStyle(
-                color: color,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+  Widget _buildStatCard({
+    required String title,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      constraints: BoxConstraints(minWidth: 70), // Constrain width
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Smaller
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8), // Smaller
+        border: Border.all(color: Colors.white.withOpacity(0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 16, // Smaller
+              fontWeight: FontWeight.bold,
             ),
-            SizedBox(height: 2),
-            Text(
-              title,
-              style: TextStyle(
-                color: color.withOpacity(0.9),
-                fontSize: 12,
-              ),
+          ),
+          SizedBox(height: 2),
+          Text(
+            title,
+            style: TextStyle(
+              color: color.withOpacity(0.9),
+              fontSize: 10, // Smaller
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildLoadingMore() {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 16),
+      padding: EdgeInsets.symmetric(vertical: 12),
       child: Center(
         child: CircularProgressIndicator(color: Color(0xFF10B981)),
       ),
     );
   }
 
-  void _showFilterDialog() {
-    final controller = Get.find<AgentNotificationController>();
-
+  void _showFilterDialog(AgentNotificationController controller) {
     String selectedStatus = controller.filterStatus.value;
     String selectedType = controller.filterType.value;
     String selectedPriority = controller.filterPriority.value;
@@ -494,31 +516,28 @@ class AgentNotificationListScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Status filter
               DropdownButtonFormField<String>(
                 value: selectedStatus.isEmpty ? null : selectedStatus,
                 decoration: InputDecoration(
                   labelText: 'Status',
                   border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 items: [
                   DropdownMenuItem(value: '', child: Text('All Status')),
                   DropdownMenuItem(value: 'draft', child: Text('Draft')),
-                  DropdownMenuItem(
-                      value: 'scheduled', child: Text('Scheduled')),
+                  DropdownMenuItem(value: 'scheduled', child: Text('Scheduled')),
                   DropdownMenuItem(value: 'sent', child: Text('Sent')),
                 ],
                 onChanged: (value) => selectedStatus = value ?? '',
               ),
-
-              SizedBox(height: 16),
-
-              // Type filter
+              SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: selectedType.isEmpty ? null : selectedType,
                 decoration: InputDecoration(
                   labelText: 'Type',
                   border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 items: [
                   DropdownMenuItem(value: '', child: Text('All Types')),
@@ -529,15 +548,13 @@ class AgentNotificationListScreen extends StatelessWidget {
                 ],
                 onChanged: (value) => selectedType = value ?? '',
               ),
-
-              SizedBox(height: 16),
-
-              // Priority filter
+              SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: selectedPriority.isEmpty ? null : selectedPriority,
                 decoration: InputDecoration(
                   labelText: 'Priority',
                   border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 items: [
                   DropdownMenuItem(value: '', child: Text('All Priorities')),

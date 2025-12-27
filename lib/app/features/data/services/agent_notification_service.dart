@@ -99,14 +99,15 @@ class AgentNotificationService extends GetxService {
   }
 
   // ========== API 2: LIST ALL NOTIFICATIONS (GET /api/v1/notifications) ==========
+// Update getAllNotifications method in agent_notification_service.dart
   Future<Map<String, dynamic>> getAllNotifications({
-    String? status, // draft, scheduled, sent
-    String? type, // payment, info, alert, system
-    String? priority, // normal, high, urgent
+    String? status,
+    String? type,
+    String? priority,
     bool? active,
     int page = 1,
     int limit = 20,
-    String sort = '-created_at', // -created_at for newest first
+    String sort = '-created_at',
   }) async {
     try {
       print('📋 Fetching all notifications for agent');
@@ -141,11 +142,32 @@ class AgentNotificationService extends GetxService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         print('✅ Successfully loaded notifications');
-        print('📋 Total items: ${data['total']}');
-        print('📋 Current page: ${data['page']}');
-        print('📋 Total pages: ${data['pages']}');
-        return data;
+
+        // FIX: Based on your API response, it returns:
+        // {"success":true,"items":[...]}
+        List<dynamic> notifications = [];
+
+        if (data is Map<String, dynamic>) {
+          if (data['success'] == true) {
+            notifications = data['items'] ?? [];
+          } else {
+            // If API structure is different
+            notifications = data['notifications'] ?? data['data'] ?? [];
+          }
+        }
+
+        print('📋 Total items in response: ${notifications.length}');
+
+        return {
+          'success': true,
+          'items': notifications,
+          'total': notifications.length, // API doesn't return total count
+          'page': page,
+          'pages': 1, // Simple pagination since API doesn't provide pages
+        };
       } else {
+        print('❌ API Error: ${response.statusCode}');
+        print('❌ Response: ${response.body}');
         throw Exception('Failed to load notifications: ${response.statusCode}');
       }
     } catch (e) {
@@ -155,6 +177,7 @@ class AgentNotificationService extends GetxService {
   }
 
   // ========== API 3: GET SINGLE NOTIFICATION (GET /api/v1/notifications/{id}) ==========
+  // In agent_notification_service.dart, update getNotificationById
   Future<Map<String, dynamic>> getNotificationById(
       String notificationId) async {
     try {
@@ -173,12 +196,24 @@ class AgentNotificationService extends GetxService {
           .timeout(Duration(seconds: 30));
 
       print('📡 Response status: ${response.statusCode}');
-      print('📡 Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         print('✅ Successfully loaded notification details');
-        return data;
+
+        // FIX: Return proper structure based on API response
+        if (data.containsKey('success') && data['success'] == true) {
+          return {
+            'success': true,
+            'notification': data['notification'] ?? data,
+          };
+        } else {
+          // If no success flag, assume the response is the notification
+          return {
+            'success': true,
+            'notification': data,
+          };
+        }
       } else if (response.statusCode == 404) {
         throw Exception('Notification not found');
       } else {
@@ -188,6 +223,238 @@ class AgentNotificationService extends GetxService {
       print('🔥 Error in getNotificationById: $e');
       rethrow;
     }
+  }
+
+  // lib/data/services/agent_notification_service.dart
+// Add these methods to your existing AgentNotificationService class
+
+// ========== API 4: UPDATE NOTIFICATION (PATCH /api/v1/notifications/{id}) ==========
+  Future<Map<String, dynamic>> updateNotification({
+    required String notificationId,
+    String? title,
+    String? message,
+    String? type,
+    String? priority,
+    Map<String, dynamic>? audience,
+    List<String>? channels,
+    DateTime? sendAt,
+    DateTime? expiresAt,
+    String? status,
+    bool? isActive,
+    String? actionText,
+    String? actionUrl,
+    Map<String, dynamic>? data,
+  }) async {
+    try {
+      print('📝 Updating notification: $notificationId');
+
+      final headers = await _getHeaders();
+      final url = Uri.parse('$_baseUrl/$notificationId');
+
+      final body = <String, dynamic>{};
+
+      // Add only provided fields to the update
+      if (title != null) body['title'] = title;
+      if (message != null) body['message'] = message;
+      if (type != null) body['type'] = type;
+      if (priority != null) body['priority'] = priority;
+      if (audience != null) body['audience'] = audience;
+      if (channels != null) body['channels'] = channels;
+      if (sendAt != null) body['send_at'] = sendAt.toIso8601String();
+      if (expiresAt != null) body['expires_at'] = expiresAt.toIso8601String();
+      if (status != null) body['status'] = status;
+      if (isActive != null) body['is_active'] = isActive;
+      if (actionText != null) body['action_text'] = actionText;
+      if (actionUrl != null) body['action_url'] = actionUrl;
+      if (data != null) body['data'] = data;
+
+      print('📤 Sending PATCH request to: $url');
+      print('📋 Request body: ${jsonEncode(body)}');
+
+      final response = await http
+          .patch(
+            url,
+            headers: headers,
+            body: jsonEncode(body),
+          )
+          .timeout(Duration(seconds: 30));
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        print('✅ Notification updated successfully');
+        print('📋 Updated notification ID: ${result['notification']?['_id']}');
+        return result;
+      } else if (response.statusCode == 409) {
+        final errorBody = jsonDecode(response.body);
+        print('❌ Conflict: ${errorBody['message']}');
+        throw Exception('Cannot modify a sent or cancelled notification');
+      } else {
+        final errorBody = jsonDecode(response.body);
+        print('❌ Failed to update notification: ${errorBody['message']}');
+        throw Exception(
+            'Failed to update notification: ${errorBody['message']}');
+      }
+    } catch (e) {
+      print('🔥 Error in updateNotification: $e');
+      rethrow;
+    }
+  }
+
+// ========== API 5: SCHEDULE NOTIFICATION (POST /api/v1/notifications/{id}/schedule) ==========
+  Future<Map<String, dynamic>> scheduleNotification({
+    required String notificationId,
+    required DateTime sendAt,
+  }) async {
+    try {
+      print('📅 Scheduling notification: $notificationId');
+      print('📅 Send at: $sendAt');
+
+      final headers = await _getHeaders();
+      final url = Uri.parse('$_baseUrl/$notificationId/schedule');
+
+      final body = {
+        'send_at': sendAt.toIso8601String(),
+      };
+
+      print('📤 Sending POST request to: $url');
+      print('📋 Request body: ${jsonEncode(body)}');
+
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: jsonEncode(body),
+          )
+          .timeout(Duration(seconds: 30));
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        print('✅ Notification scheduled successfully');
+        print(
+            '📋 Scheduled notification ID: ${result['notification']?['_id']}');
+        return result;
+      } else if (response.statusCode == 409) {
+        final errorBody = jsonDecode(response.body);
+        print('❌ Conflict: ${errorBody['message']}');
+        throw Exception('Cannot schedule a sent or cancelled notification');
+      } else {
+        final errorBody = jsonDecode(response.body);
+        print('❌ Failed to schedule notification: ${errorBody['message']}');
+        throw Exception(
+            'Failed to schedule notification: ${errorBody['message']}');
+      }
+    } catch (e) {
+      print('🔥 Error in scheduleNotification: $e');
+      rethrow;
+    }
+  }
+
+// ========== API 6: SEND NOTIFICATION IMMEDIATELY (POST /api/v1/notifications/{id}/send) ==========
+  Future<Map<String, dynamic>> sendNotificationImmediately({
+    required String notificationId,
+  }) async {
+    try {
+      print('🚀 Sending notification immediately: $notificationId');
+
+      final headers = await _getHeaders();
+      final url = Uri.parse('$_baseUrl/$notificationId/send');
+
+      print('📤 Sending POST request to: $url');
+
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+          )
+          .timeout(Duration(seconds: 30));
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        print('✅ Notification sent successfully');
+        print('📋 Sent notification ID: ${result['notification']?['_id']}');
+        return result;
+      } else {
+        final errorBody = jsonDecode(response.body);
+        print('❌ Failed to send notification: ${errorBody['message']}');
+        throw Exception('Failed to send notification: ${errorBody['message']}');
+      }
+    } catch (e) {
+      print('🔥 Error in sendNotificationImmediately: $e');
+      rethrow;
+    }
+  }
+
+// ========== API 7: CANCEL NOTIFICATION (POST /api/v1/notifications/{id}/cancel) ==========
+  Future<Map<String, dynamic>> cancelNotification({
+    required String notificationId,
+  }) async {
+    try {
+      print('❌ Cancelling notification: $notificationId');
+
+      final headers = await _getHeaders();
+      final url = Uri.parse('$_baseUrl/$notificationId/cancel');
+
+      print('📤 Sending POST request to: $url');
+
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+          )
+          .timeout(Duration(seconds: 30));
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        print('✅ Notification cancelled successfully');
+        print(
+            '📋 Cancelled notification ID: ${result['notification']?['_id']}');
+        return result;
+      } else if (response.statusCode == 409) {
+        final errorBody = jsonDecode(response.body);
+        print('❌ Conflict: ${errorBody['message']}');
+        throw Exception('Cannot cancel a sent notification');
+      } else {
+        final errorBody = jsonDecode(response.body);
+        print('❌ Failed to cancel notification: ${errorBody['message']}');
+        throw Exception(
+            'Failed to cancel notification: ${errorBody['message']}');
+      }
+    } catch (e) {
+      print('🔥 Error in cancelNotification: $e');
+      rethrow;
+    }
+  }
+
+// ========== HELPER METHODS ==========
+
+// Helper to check if notification can be modified
+  bool canModifyNotification(Map<String, dynamic> notification) {
+    final status = notification['status']?.toString() ?? 'draft';
+    return status == 'draft' || status == 'scheduled';
+  }
+
+// Helper to check if notification can be sent
+  bool canSendNotification(Map<String, dynamic> notification) {
+    final status = notification['status']?.toString() ?? 'draft';
+    return status == 'draft' || status == 'scheduled';
+  }
+
+// Helper to check if notification can be cancelled
+  bool canCancelNotification(Map<String, dynamic> notification) {
+    final status = notification['status']?.toString() ?? 'draft';
+    return status == 'draft' || status == 'scheduled';
   }
 
   // ========== HELPER METHODS ==========
@@ -296,24 +563,6 @@ class AgentNotificationService extends GetxService {
       audience: audience,
       status: 'sent', // Immediate notifications are sent
       sendAt: DateTime.now(),
-    );
-  }
-
-  // Schedule notification for future
-  Future<Map<String, dynamic>> scheduleNotification({
-    required String title,
-    required String message,
-    required Map<String, dynamic> audience,
-    required DateTime sendAt,
-    String type = 'info',
-  }) async {
-    return await createNotification(
-      title: title,
-      message: message,
-      type: type,
-      audience: audience,
-      status: 'scheduled',
-      sendAt: sendAt,
     );
   }
 
